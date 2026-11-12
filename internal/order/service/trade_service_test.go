@@ -441,7 +441,7 @@ func TestChannelTradeNoCannotBindTwoOrders(t *testing.T) {
 	}
 }
 
-// 验签用例：签名错误/缺失不得入账，回调记录 FAILED，可用渠道流水号反查异常。
+// 验签用例：签名错误/缺失不得入账；伪造流量不落回调记录（不占用渠道流水号），证据在异常表。
 func TestPayNotifyBadSignatureRejected(t *testing.T) {
 	resetTables(t)
 	ctx := context.Background()
@@ -459,15 +459,43 @@ func TestPayNotifyBadSignatureRejected(t *testing.T) {
 	if got := order(t, placed.ID).Status; got != entity.OrderStatusCreated {
 		t.Fatalf("order must stay CREATED, got %s", got)
 	}
-	callback, err := testSvc.GetCallback(ctx, "CH-FORGED")
-	if err != nil {
-		t.Fatalf("query callback failed: %v", err)
+	// 伪造流量不落回调记录：同流水号的真实重试不会被幂等误判
+	if _, err := testSvc.GetCallback(ctx, "CH-FORGED"); !errors.Is(err, entity.ErrCallbackNotFound) {
+		t.Fatalf("forged trade no must not persist callback, got %v", err)
 	}
-	if callback.Status != entity.CallbackFailed || callback.ExceptionType != entity.ExcBadSignature {
-		t.Fatalf("callback must be FAILED with 验签失败 exception, got %+v", callback)
+	exceptions, err := testSvc.ListExceptions(ctx, true)
+	if err != nil || len(exceptions) != 1 || exceptions[0].Type != entity.ExcBadSignature {
+		t.Fatalf("verify failure must record exception, got %+v err=%v", exceptions, err)
 	}
 	if pays := ledgersOf(t, placed.ID, entity.LedgerPay); len(pays) != 0 {
 		t.Fatalf("forged signature must not create pay ledger, got %d", len(pays))
+	}
+}
+
+// 评分整改回归：验签失败的伪造流水号不得阻断同号真实回调。
+// 攻击路径：先伪造签名（原实现会落回调记录，导致真实重试被判 duplicate 返回成功而不入账）。
+func TestForgedTradeNoDoesNotBlockGenuineRetry(t *testing.T) {
+	resetTables(t)
+	ctx := context.Background()
+	placed, err := testSvc.PlaceOrder(ctx, placeCmd("buyer1", "P1", 1))
+	if err != nil {
+		t.Fatalf("place order failed: %v", err)
+	}
+	if _, err := testSvc.PayNotify(ctx, forgedNotifyCmd("CH-ATTACK", placed.ID, placed.AmountCents)); err != nil {
+		t.Fatalf("forged notify should not error: %v", err)
+	}
+	retry, err := testSvc.PayNotify(ctx, notifyCmd("CH-ATTACK", placed.ID, placed.AmountCents))
+	if err != nil {
+		t.Fatalf("genuine retry failed: %v", err)
+	}
+	if !retry.Success || retry.Duplicate || retry.Code != "success" {
+		t.Fatalf("genuine retry must be accepted, got %+v", retry)
+	}
+	if got := order(t, placed.ID).Status; got != entity.OrderStatusPaid {
+		t.Fatalf("retry must credit order to PAID, got %s", got)
+	}
+	if pays := ledgersOf(t, placed.ID, entity.LedgerPay); len(pays) != 1 {
+		t.Fatalf("retry must create exactly 1 pay ledger, got %d", len(pays))
 	}
 }
 

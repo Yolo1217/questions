@@ -96,11 +96,12 @@ func TestListOrdersFilterByBuyerAndStatus(t *testing.T) {
 }
 
 // 客服反查：异常列表、回调列表过滤、按交易号/空值查询。
+// 评分整改后语义：伪造签名不落回调记录（异常表留痕），合法但无主的回调才落 FAILED。
 func TestListExceptionsAndCallbackQuery(t *testing.T) {
 	resetTables(t)
 	ctx := context.Background()
 
-	if _, err := testSvc.PayNotify(ctx, forgedNotifyCmd("CH-QRY-1", "ORD-MISSING", 100)); err != nil {
+	if _, err := testSvc.PayNotify(ctx, forgedNotifyCmd("CH-QRY-FORGED", "ORD-MISSING", 100)); err != nil {
 		t.Fatalf("notify should not error: %v", err)
 	}
 
@@ -111,8 +112,18 @@ func TestListExceptionsAndCallbackQuery(t *testing.T) {
 	if pending[0].Type != entity.ExcBadSignature {
 		t.Fatalf("expected verify_failed exception, got %s", pending[0].Type)
 	}
+	// 伪造流量不得占用渠道流水号：回调表查不到该流水号（回归 TestForgedTradeNoDoesNotBlockGenuineRetry）
+	forgedCallbacks, err := testSvc.ListCallbacks(ctx, "CH-QRY-FORGED", "")
+	if err != nil || len(forgedCallbacks) != 0 {
+		t.Fatalf("forged trade no must not persist callback, got %d err=%v", len(forgedCallbacks), err)
+	}
+
+	// 合法签名但订单不存在：无主支付，回调落 FAILED 可反查
+	if _, err := testSvc.PayNotify(ctx, notifyCmd("CH-QRY-1", "ORD-MISSING", 100)); err != nil {
+		t.Fatalf("notify failed: %v", err)
+	}
 	all, err := testSvc.ListExceptions(ctx, false)
-	if err != nil || len(all) != 1 {
+	if err != nil || len(all) != 2 {
 		t.Fatalf("list all exceptions failed: %d err=%v", len(all), err)
 	}
 

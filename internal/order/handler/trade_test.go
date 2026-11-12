@@ -159,7 +159,7 @@ func TestTradeRPCFlow(t *testing.T) {
 		t.Fatalf("duplicate audit must be idempotent, got %+v err=%v", dupAudit, err)
 	}
 
-	// 异常：伪造签名通知 → 异常列表 → 处置 → 回调反查
+	// 异常：伪造签名通知（验签前置：不落回调记录，落异常表）→ 异常列表 → 处置 → 合法回调反查
 	if _, err := server.PayNotify(ctx, &orderv1.PayNotifyRequest{ChannelTradeNo: "CH-H3", OrderId: "ORD-MISSING", AmountCents: 1, Signature: "bad"}); err != nil {
 		t.Fatalf("forged notify should not error: %v", err)
 	}
@@ -167,17 +167,24 @@ func TestTradeRPCFlow(t *testing.T) {
 	if err != nil || len(exs.GetItems()) != 1 {
 		t.Fatalf("pending exception expected, got n=%d err=%v", len(exs.GetItems()), err)
 	}
+	if exs.GetItems()[0].GetType() != entity.ExcBadSignature {
+		t.Fatalf("expected verify_failed exception, got %s", exs.GetItems()[0].GetType())
+	}
 	closed, err := server.HandleExceptionPay(ctx, &orderv1.HandleExceptionPayRequest{
 		ExceptionId: exs.GetItems()[0].GetId(), Action: "ignore", Reason: "渠道确认误报", Operator: "客服小时",
 	})
 	if err != nil || closed.GetStatus() != entity.ExcStatusClosed {
 		t.Fatalf("handle exception failed: %+v err=%v", closed, err)
 	}
-	callback, err := server.GetPayCallback(ctx, &orderv1.GetPayCallbackRequest{TradeNo: "CH-H3"})
-	if err != nil || callback.GetStatus() != entity.CallbackFailed || callback.GetExceptionType() == "" {
+	// 伪造流水号不得出现在回调表；反查走合法支付流水 CH-H1
+	callback, err := server.GetPayCallback(ctx, &orderv1.GetPayCallbackRequest{TradeNo: "CH-H1"})
+	if err != nil || callback.GetStatus() != entity.CallbackDone {
 		t.Fatalf("callback lookup failed: %+v err=%v", callback, err)
 	}
-	callbacks, err := server.ListPayCallbacks(ctx, &orderv1.ListPayCallbacksRequest{Keyword: "CH-H3"})
+	if _, err := server.GetPayCallback(ctx, &orderv1.GetPayCallbackRequest{TradeNo: "CH-H3"}); err == nil {
+		t.Fatalf("forged trade no must not persist callback")
+	}
+	callbacks, err := server.ListPayCallbacks(ctx, &orderv1.ListPayCallbacksRequest{Keyword: "CH-H1"})
 	if err != nil || len(callbacks.GetItems()) != 1 {
 		t.Fatalf("callback list failed: n=%d err=%v", len(callbacks.GetItems()), err)
 	}

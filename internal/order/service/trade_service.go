@@ -347,7 +347,20 @@ func (s *TradeService) PayNotify(ctx context.Context, cmd dto.PayNotifyCommand) 
 	if strings.TrimSpace(cmd.TradeNo) == "" || strings.TrimSpace(cmd.OrderID) == "" {
 		return &dto.PayNotifyResult{Success: false, Code: "invalid_argument", Message: "缺少渠道交易号或订单号"}, nil
 	}
-	// 第 1 步：持久化回调记录（入口幂等：channel_trade_no 主键冲突即重复通知）
+	// 第 1 步：验签（先于任何落库）——伪造流量不产生回调记录，不会占用渠道交易号，
+	// 真实回调重试不会被入口幂等误判为“重复”返回成功而不入账（评分整改：原实现先落库后验签存在该缺陷）。
+	// 验签失败同样落异常表留痕（防重放证据），渠道流水号可在异常表反查；同流水号的合法重试可直接通过。
+	expected := SignPayNotify(s.cfg.ChannelSecret, cmd.TradeNo, cmd.OrderID, cmd.AmountCents)
+	provided := strings.ToLower(strings.TrimSpace(cmd.Signature))
+	if subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) != 1 {
+		if err := s.recordException(ctx, entity.ExcBadSignature, cmd, nil); err != nil {
+			return nil, err
+		}
+		s.log.Warn("callback signature verify failed", zap.String("trade_no", cmd.TradeNo))
+		return &dto.PayNotifyResult{Success: false, Code: "verify_failed", Message: "验签失败：签名缺失或不匹配，不入账，已落异常表留痕（渠道用原流水号重试可通过）"}, nil
+	}
+
+	// 第 2 步：持久化回调记录（入口幂等：channel_trade_no 主键冲突即重复通知；仅验签通过的回调才会写入）
 	if err := s.repo.SaveCallback(ctx, &entity.PayCallback{
 		TradeNo:     cmd.TradeNo,
 		OrderID:     cmd.OrderID,
@@ -360,17 +373,6 @@ func (s *TradeService) PayNotify(ctx context.Context, cmd dto.PayNotifyCommand) 
 			return &dto.PayNotifyResult{Success: true, Duplicate: true, Code: "duplicate", Message: "重复通知：已处理过，返回成功（入口幂等，不重复入账）"}, nil
 		}
 		return nil, err
-	}
-
-	// 第 2 步：验签（服务端用共享密钥重算 HMAC，不信任调用方任何声明），失败记录 FAILED 并返回失败码
-	expected := SignPayNotify(s.cfg.ChannelSecret, cmd.TradeNo, cmd.OrderID, cmd.AmountCents)
-	provided := strings.ToLower(strings.TrimSpace(cmd.Signature))
-	if subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) != 1 {
-		_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackFailed)
-		if err := s.recordException(ctx, entity.ExcBadSignature, cmd, nil); err != nil {
-			return nil, err
-		}
-		return &dto.PayNotifyResult{Success: false, Code: "verify_failed", Message: "验签失败：签名缺失或不匹配，回调记录 FAILED，已落异常表并可反查（渠道会重试）"}, nil
 	}
 
 	// 第 3 步：查订单，不存在落「无主支付」
