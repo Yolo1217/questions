@@ -118,7 +118,8 @@ $retry = Post-Api "/api/v1/cs/refunds/$($order2.id)/audit" $cs @{ approve = $tru
 if ($retry.error) {
     Bad "重试失败：$($retry.error.code)"
 } elseif ($retry.data.order.status -eq "REFUNDED") {
-    Ok "重试后 REFUNDED，丢弃重复标记 duplicate=$($retry.data.duplicate)"
+    # 重试路径是新的渠道调用，不携带重复标记；重复性由下一步的同状态再提交验证
+    Ok "重试后 REFUNDED（重试为全新渠道调用，无重复标记）"
 } else {
     Bad "重试后状态 $($retry.data.order.status)"
 }
@@ -146,7 +147,9 @@ Ok "回调反查 status=$($callback.status) 命中=$($callback.hits) 异常=$($c
 Step "⑤ 运营页：汇总 / 商品维护 / 订单检索 / 回调列表"
 $ops = Login "ops01" "ops"
 $summary = Get-Api "/api/v1/ops/summary" $ops
-Ok "已收款=$($summary.paid_total_cents) 已退款=$($summary.refunded_total_cents) 可售=$($summary.available_total) 预占=$($summary.reserved_total) 待处理异常=$($summary.exception_pending)"
+# protobuf JSON 省略零值字段，缺失一律按 0 展示
+function Nz($v) { if ($null -ne $v) { $v } else { 0 } }
+Ok "已收款=$(Nz $summary.paid_total_cents) 已退款=$(Nz $summary.refunded_total_cents) 可售=$(Nz $summary.available_total) 预占=$(Nz $summary.reserved_total) 待处理异常=$(Nz $summary.exception_pending)"
 
 $saved = (Post-Api "/api/v1/products" $ops @{ id = "P3"; name = "页面演示新品"; price_cents = 6600; available = 4; on_sale = $true }).data
 Ok "商品维护 $($saved.id) 可售=$($saved.available) 在售=$($saved.on_sale)"
