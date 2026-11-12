@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	notev1 "github.com/BwCloudWeGo/bw-cli/api/gen/note/v1"
 	userv1 "github.com/BwCloudWeGo/bw-cli/api/gen/user/v1"
@@ -185,30 +187,60 @@ func requireRoute(t *testing.T, routes gin.RoutesInfo, method string, path strin
 	require.Failf(t, "route not registered", "%s %s", method, path)
 }
 
-type fakeUserClient struct{}
+type fakeUserClient struct {
+	err error // 非 nil 时所有方法返回该 gRPC 错误
+}
 
-func (fakeUserClient) Register(context.Context, *userv1.RegisterRequest, ...grpc.CallOption) (*userv1.UserResponse, error) {
+func (f fakeUserClient) fail() error {
+	return status.Error(codes.Internal, "internal_error|fake user failure")
+}
+
+func (f fakeUserClient) Register(context.Context, *userv1.RegisterRequest, ...grpc.CallOption) (*userv1.UserResponse, error) {
+	if f.err != nil {
+		return nil, f.fail()
+	}
 	return &userv1.UserResponse{Id: "user-1", Account: "ada", DisplayName: "Ada"}, nil
 }
 
-func (fakeUserClient) Login(context.Context, *userv1.LoginRequest, ...grpc.CallOption) (*userv1.UserResponse, error) {
+func (f fakeUserClient) Login(context.Context, *userv1.LoginRequest, ...grpc.CallOption) (*userv1.UserResponse, error) {
+	if f.err != nil {
+		return nil, f.fail()
+	}
 	return &userv1.UserResponse{Id: "user-1", Account: "ada", DisplayName: "Ada"}, nil
 }
 
-func (fakeUserClient) GetUser(context.Context, *userv1.GetUserRequest, ...grpc.CallOption) (*userv1.UserResponse, error) {
+func (f fakeUserClient) GetUser(context.Context, *userv1.GetUserRequest, ...grpc.CallOption) (*userv1.UserResponse, error) {
+	if f.err != nil {
+		return nil, f.fail()
+	}
 	return &userv1.UserResponse{Id: "user-1", Account: "ada", DisplayName: "Ada"}, nil
 }
 
-type fakeNoteClient struct{}
+type fakeNoteClient struct {
+	err error // 非 nil 时所有方法返回该 gRPC 错误
+}
 
-func (fakeNoteClient) CreateNote(context.Context, *notev1.CreateNoteRequest, ...grpc.CallOption) (*notev1.NoteResponse, error) {
+func (f fakeNoteClient) fail() error {
+	return status.Error(codes.Internal, "internal_error|fake note failure")
+}
+
+func (f fakeNoteClient) CreateNote(context.Context, *notev1.CreateNoteRequest, ...grpc.CallOption) (*notev1.NoteResponse, error) {
+	if f.err != nil {
+		return nil, f.fail()
+	}
 	return &notev1.NoteResponse{Id: "note-1", AuthorId: "user-1", Title: "Title", Content: "Content", Status: "DRAFT"}, nil
 }
 
-func (fakeNoteClient) GetNote(context.Context, *notev1.GetNoteRequest, ...grpc.CallOption) (*notev1.NoteResponse, error) {
+func (f fakeNoteClient) GetNote(context.Context, *notev1.GetNoteRequest, ...grpc.CallOption) (*notev1.NoteResponse, error) {
+	if f.err != nil {
+		return nil, f.fail()
+	}
 	return &notev1.NoteResponse{Id: "note-1", AuthorId: "user-1", Title: "Title", Content: "Content", Status: "DRAFT"}, nil
 }
 
-func (fakeNoteClient) PublishNote(context.Context, *notev1.PublishNoteRequest, ...grpc.CallOption) (*notev1.NoteResponse, error) {
+func (f fakeNoteClient) PublishNote(context.Context, *notev1.PublishNoteRequest, ...grpc.CallOption) (*notev1.NoteResponse, error) {
+	if f.err != nil {
+		return nil, f.fail()
+	}
 	return &notev1.NoteResponse{Id: "note-1", AuthorId: "user-1", Title: "Title", Content: "Content", Status: "PUBLISHED"}, nil
 }
