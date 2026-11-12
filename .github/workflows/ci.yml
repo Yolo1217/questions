@@ -50,6 +50,9 @@ jobs:
         run: go vet ./...
 
       - name: go test（题目01 相关模块，门禁）
+        env:
+          # 连不上 MySQL/Mongo 时直接失败，避免 TestMain 静默跳过导致假绿
+          TRADE_REQUIRE_DB: "1"
         run: go test -count=1 ./internal/... ./pkg/middleware/...
 
       - name: go test（脚手架其余包，信息项）
@@ -57,6 +60,8 @@ jobs:
         continue-on-error: true
 
       - name: 覆盖率（order 模块口径，门禁 ≥85%）
+        env:
+          TRADE_REQUIRE_DB: "1"
         run: |
           mkdir -p reports
           go test -count=1 -coverpkg=./internal/order/... \
@@ -66,7 +71,7 @@ jobs:
           TOTAL=$(tail -1 reports/coverage.func | awk '{print $3}' | tr -d '%')
           echo "模块口径覆盖率：${TOTAL}%"
           go tool cover -html=reports/coverage.out -o reports/coverage.html
-          if [ "$(echo "$TOTAL >= 85" | bc -l)" != "1" ]; then
+          if ! awk -v t="$TOTAL" 'BEGIN { exit !(t >= 85) }'; then
             echo "覆盖率 ${TOTAL}% 低于 85% 门禁"
             exit 1
           fi
