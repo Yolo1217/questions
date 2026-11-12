@@ -14,7 +14,7 @@
 
 | # | Skill 揭示的问题 | 修正 | 复检证据 |
 |---|---|---|---|
-| 1 | 支付入账不能只返回布尔：必须 HMAC 验签（恒定时间比较）+ `trade_no` 幂等键 + 条件更新三道防线 | `service.PayNotify` 固定六步：验签 → 幂等 → 订单存在 → 状态比对 → 入账 → 台账；异常分支只落异常表不改状态 | `TestPayNotifyBadSignatureRejected`、`TestPayNotifyRepeatedIsIdempotent`（5 次 → 1 条流水）、`TestConcurrentNotifyOnlyOneApplies`（3 路并发 → 1 条）；冒烟实测 `verify_failed` / `duplicate=true` |
+| 1 | 支付入账不能只返回布尔：必须 HMAC 验签（恒定时间比较）+ `trade_no` 幂等键 + 条件更新三道防线，且**验签先于落库** | `service.PayNotify` 六步：验签 → 持久化幂等 → 订单存在 → 金额比对 → 状态分流 → 台账；异常分支只落异常表不改状态。初版实现误为先落库后验签，评分整改以 `TestForgedTradeNoDoesNotBlockGenuineRetry` 回归修正 | `TestPayNotifyBadSignatureRejected`、`TestPayNotifyRepeatedIsIdempotent`（5 次 → 1 条流水）、`TestConcurrentNotifyOnlyOneApplies`（3 路并发 → 1 条）；冒烟实测 `verify_failed` / `duplicate=true` |
 | 2 | 异常处置原因必须必填且留痕，闭环后不可再改 | `HandleException` 校验 reason 非空，处置结果写入异常表与订单台账（`exception` 类）；`CloseException` 条件更新 | `TestHandleExceptionRequiresReason`；冒烟实测空原因 `reason_required`、闭环 `已闭环`、闭环后再处置被拒 |
 | 3 | 退款审核重复提交必须幂等（不得重复打款/重复回补） | 审核先查订单状态：非 `REFUNDING` 直接返回 `duplicate=true` + 当前状态，不再触发渠道 | `TestAuditRefundDuplicateIsIdempotent`（退款流水条数不变）；冒烟实测第三次提交 `duplicate=true` |
 | 4 | 发货必须对非法状态给出具名错误（已关闭/已退款/退款中），而非笼统失败 | `Ship` 显式分支：`order_closed` / `order_refunded` / `order_refunding`，并把拒绝原因写台账 | `TestShipRejectsClosedAndRefundedOrder`、`TestRefundAndShipRace`；页面实测 REFUNDING 订单发货返回 `order_refunding` |

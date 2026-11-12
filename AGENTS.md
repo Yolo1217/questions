@@ -25,10 +25,10 @@ go test -coverpkg=./internal/order/... -coverprofile=reports/coverage.out ./inte
 
 1. **不得绕过状态机**：订单状态迁移唯一入口是 `internal/order/service` 的显式方法；禁止在 repo/handler 层直接 UPDATE status。
 2. **不得引入删除类接口**：订单、台账、回调、异常表一律只增不改不删；异常闭环用条件更新（`WHERE status='待处理'`）。
-3. **不得弱化幂等与验签**：支付回调 HMAC 验签 + `trade_no` 幂等 + 条件更新三道防线必须保留；退款审核重复提交必须返回 `duplicate=true`。
+3. **不得弱化幂等与验签，且验签必须先于落库**：支付回调先重算 HMAC 验签，通过后才写回调记录（伪造流量只落异常表，不得占用渠道流水号）；退款审核重复提交必须返回 `duplicate=true`。
 4. **不得让关单后到账恢复订单或回补库存**：迟到支付只能落异常表。
 5. **金额必须来自服务端快照**：任何金额计算不得采信前端传参；库存扣减必须是条件更新（`available >= qty`）。
-6. **角色鉴权不得绕过**：新增接口必须挂 `RequireRole`；买家数据接口必须校验归属（buyer_id）。
+6. **角色鉴权不得绕过，不允许任何匿名可写接口**：新增接口必须挂 `RequireRole`；买家数据接口必须校验归属（buyer_id）；脚手架遗留 CRUD 也必须登录后访问。
 7. **覆盖率门禁 ≥85%**（order 模块口径）：改业务代码必须同步补测试；`pkg/middleware` 同样在门禁内。
 
 ## 4. 测试约定
