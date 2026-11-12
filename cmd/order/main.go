@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -50,8 +52,15 @@ func main() {
 
 	repo := orderrepo.NewGormRepository(db, log)
 	svc := orderservice.NewService(repo, log)
+	trade := orderservice.NewTradeService(repo, tradeConfigFromEnv(), log)
+	ctx, cancelSweep := context.WithCancel(context.Background())
+	if err := trade.SeedProducts(ctx); err != nil {
+		log.Fatal("seed trade products failed", zap.Error(err))
+	}
+	go sweepExpiredOrders(ctx, trade, log)
+
 	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
-	orderv1.RegisterOrderServiceServer(server, orderhandler.NewServer(svc, log))
+	orderv1.RegisterOrderServiceServer(server, orderhandler.NewServer(svc, trade, log))
 
 	port := cfg.ServicePort("order", defaultGRPCPort)
 	addr := fmt.Sprintf("%s:%d", cfg.GRPC.Host, port)
@@ -64,7 +73,50 @@ func main() {
 	printStartupSummary(cfg.App.Env, addr, port)
 	go shutdownOnSignal(server, log)
 	if err := server.Serve(listener); err != nil {
+		cancelSweep()
 		log.Fatal("service stopped unexpectedly", zap.Error(err))
+	}
+	cancelSweep()
+}
+
+// tradeConfigFromEnv 读取交易域策略：保留期秒数、渠道退款首次失败演示开关。
+func tradeConfigFromEnv() orderservice.TradeConfig {
+	keepSeconds := 600
+	if raw := os.Getenv("TRADE_KEEP_SECONDS"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil && parsed > 0 {
+			keepSeconds = parsed
+		}
+	}
+	refundFailFirst := os.Getenv("TRADE_REFUND_FAIL_FIRST") != "0"
+	secret := os.Getenv("TRADE_CHANNEL_SECRET")
+	if secret == "" {
+		secret = orderservice.DefaultChannelSecret
+	}
+	return orderservice.TradeConfig{
+		Keep:            time.Duration(keepSeconds) * time.Second,
+		RefundFailFirst: refundFailFirst,
+		ChannelSecret:   secret,
+	}
+}
+
+// sweepExpiredOrders 每 5 秒关闭超保留期的待支付订单并释放预占（超时判断使用服务端时间）。
+func sweepExpiredOrders(ctx context.Context, trade *orderservice.TradeService, log *zap.Logger) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			closed, err := trade.SweepExpired(ctx)
+			if err != nil {
+				log.Warn("sweep expired orders failed", zap.Error(err))
+				continue
+			}
+			if closed > 0 {
+				log.Info("expired orders closed", zap.Int("count", closed))
+			}
+		}
 	}
 }
 

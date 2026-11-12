@@ -16,16 +16,20 @@ import (
 // Server 将 order gRPC 请求适配到 service 用例。
 type Server struct {
 	orderv1.UnimplementedOrderServiceServer
-	svc *service.Service
-	log *zap.Logger
+	svc   *service.Service
+	trade *service.TradeService
+	log   *zap.Logger
 }
 
-// NewServer 创建 order gRPC 服务端适配器。
-func NewServer(svc *service.Service, log *zap.Logger) *Server {
+// NewServer 创建 order gRPC 服务端适配器（trade 承载题目01 交易用例）。
+func NewServer(svc *service.Service, trade *service.TradeService, log *zap.Logger) *Server {
 	if log == nil {
 		log = zap.NewNop()
 	}
-	return &Server{svc: svc, log: log}
+	if trade == nil {
+		panic("order handler: trade service is required")
+	}
+	return &Server{svc: svc, trade: trade, log: log}
 }
 
 // CreateOrder 处理创建 RPC。
