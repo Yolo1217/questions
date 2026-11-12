@@ -6,6 +6,15 @@ type RegisterCommand struct {
 	Account     string
 	DisplayName string
 	Password    string
+	Role        string
+}
+
+// SeedUserCommand 是启动时预置账号的入参（账号已存在则跳过，保证幂等）。
+type SeedUserCommand struct {
+	Account     string
+	DisplayName string
+	Password    string
+	Role        string
 }
 
 // LoginCommand 是用户登录用例的入参。

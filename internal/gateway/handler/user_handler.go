@@ -58,7 +58,11 @@ func (h *UserHandler) Login(c *gin.Context) {
 		httpx.Error(c, apperrors.FromGRPC(err))
 		return
 	}
-	token, err := middleware.GenerateToken(h.jwtCfg, middleware.JWTClaims{UserID: resp.GetId()})
+	token, err := middleware.GenerateToken(h.jwtCfg, middleware.JWTClaims{
+		UserID: resp.GetId(),
+		Role:   resp.GetRole(),
+		Name:   resp.GetDisplayName(),
+	})
 	if err != nil {
 		httpx.Error(c, apperrors.Wrap(apperrors.KindInternal, "jwt_token_error", "generate jwt token failed", err))
 		return

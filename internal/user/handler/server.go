@@ -29,6 +29,7 @@ func (s *Server) Register(ctx context.Context, req *userv1.RegisterRequest) (*us
 		Account:     req.GetAccount(),
 		DisplayName: req.GetDisplayName(),
 		Password:    req.GetPassword(),
+		Role:        req.GetRole(),
 	})
 	if err != nil {
 		return nil, mapUserError(err)
@@ -64,6 +65,7 @@ func toProto(user *dto.UserDTO) *userv1.UserResponse {
 		Id:          user.ID,
 		Account:     user.Account,
 		DisplayName: user.DisplayName,
+		Role:        user.Role,
 	}
 }
 

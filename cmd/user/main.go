@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -48,6 +49,16 @@ func main() {
 
 	repo := userrepo.NewGormRepository(db, log)
 	svc := userservice.NewService(repo, userrepo.NewSHA256Hasher())
+	seedCtx, cancelSeed := context.WithTimeout(context.Background(), 10*time.Second)
+	created, err := svc.SeedUsers(seedCtx, seedAccounts())
+	cancelSeed()
+	if err != nil {
+		log.Fatal("seed preset accounts failed", zap.Error(err))
+	}
+	if created > 0 {
+		log.Info("preset accounts seeded", zap.Int("count", created))
+	}
+
 	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
 	userv1.RegisterUserServiceServer(server, userhandler.NewServer(svc, log))
 
@@ -61,6 +72,19 @@ func main() {
 	log.Info("user service listening", zap.String("addr", addr))
 	if err := server.Serve(listener); err != nil {
 		log.Fatal("user service stopped unexpectedly", zap.Error(err))
+	}
+}
+
+// seedAccounts 返回题目01 预置账号：3 买家 + 仓库 / 客服 / 运营，统一初始密码 123456。
+func seedAccounts() []userservice.SeedUserCommand {
+	const password = "123456"
+	return []userservice.SeedUserCommand{
+		{Account: "buyer1", DisplayName: "阿禾", Password: password, Role: "buyer"},
+		{Account: "buyer2", DisplayName: "北舟", Password: password, Role: "buyer"},
+		{Account: "buyer3", DisplayName: "橙子", Password: password, Role: "buyer"},
+		{Account: "warehouse01", DisplayName: "仓管小周", Password: password, Role: "warehouse"},
+		{Account: "support01", DisplayName: "客服小时", Password: password, Role: "cs"},
+		{Account: "ops01", DisplayName: "运营阿运", Password: password, Role: "ops"},
 	}
 }
 

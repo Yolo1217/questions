@@ -9,6 +9,7 @@ type UserDTO struct {
 	Account     string
 	DisplayName string
 	Sex         bool
+	Role        string
 }
 
 // FromUser 将 user 领域聚合转换成对外返回的数据结构。
@@ -18,5 +19,6 @@ func FromUser(user *entity.User) *UserDTO {
 		Account:     user.Account,
 		DisplayName: user.DisplayName,
 		Sex:         user.Sex,
+		Role:        user.Role,
 	}
 }

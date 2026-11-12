@@ -10,6 +10,7 @@ type UserModel struct {
 	Sex          bool   `gorm:"column:sex"`
 	PasswordSalt string `gorm:"column:password_salt;size:64;not null"`
 	PasswordHash string `gorm:"column:password_hash;size:255;not null"`
+	Role         string `gorm:"column:role;size:20;not null;default:buyer"`
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

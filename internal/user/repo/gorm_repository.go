@@ -109,6 +109,7 @@ func toUserModel(user *entity.User) *dbmodel.UserModel {
 		Sex:          user.Sex,
 		PasswordSalt: salt,
 		PasswordHash: user.PasswordHash,
+		Role:         user.Role,
 		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    user.UpdatedAt,
 	}
@@ -122,6 +123,7 @@ func toUserDomain(record *dbmodel.UserModel) *entity.User {
 		Sex:          record.Sex,
 		PasswordSalt: record.PasswordSalt,
 		PasswordHash: record.PasswordHash,
+		Role:         record.Role,
 		CreatedAt:    record.CreatedAt,
 		UpdatedAt:    record.UpdatedAt,
 	}
