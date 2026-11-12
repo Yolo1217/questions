@@ -852,7 +852,11 @@ make proto
 - **可操作页面（5 个）**：网关启动后访问 `http://localhost:8080/`
   - `/buyer.html` 买家 · `/warehouse.html` 仓库 · `/refund.html` 客服退款 · `/exception.html` 客服异常 · `/ops.html` 运营核查
   - 页面内嵌于网关二进制（`go:embed`），只调用真实 `/api/v1`；截图见 `reports/screenshots/`
-- 冒烟脚本：`scripts/smoke-trade.ps1`（S1 正常成交 + S3 售前退款）、`scripts/smoke-late-pay.ps1`（S4 迟到支付）、`scripts/smoke-pages.ps1`（五页面端到端）、`scripts/seed-demo.ps1`（六状态 + 三异常演示数据）
+- **一键容器化部署**：`GATEWAY_PORT=18080 docker compose -f docker-compose.trade.yml up -d --build`
+  - MySQL + user + order + gateway；健康探活用真实查询（建库期 `mysqladmin ping` 会误报）
+  - 部署冒烟：`BASE_URL=http://127.0.0.1:18080 bash scripts/smoke-http.sh`（25 项断言，本地已实测全过）
+- **CI 门禁**：`.github/workflows/ci.yml` — gofmt/vet/单测（真实 MySQL+Mongo 服务容器）→ 覆盖率 ≥85% 门禁 → compose 部署冒烟并留运行 ID
+- 冒烟脚本：`scripts/smoke-trade.ps1`（S1 正常成交 + S3 售前退款）、`scripts/smoke-late-pay.ps1`（S4 迟到支付）、`scripts/smoke-pages.ps1`（五页面端到端）、`scripts/smoke-http.sh`（Linux/CI）、`scripts/seed-demo.ps1`（六状态 + 三异常演示数据）
 - 数据库：本地 MySQL `root/root`，库 `questions`（单元测试使用独立库 `questions_test` / `questions_test_repo` / `questions_test_handler`）
 - 预置账号：`buyer1~3` / `warehouse01` / `support01` / `ops01`，密码均为 `123456`
 - 启动顺序：`go run ./cmd/user` → `go run ./cmd/order` → `go run ./cmd/gateway`
