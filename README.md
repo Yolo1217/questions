@@ -858,6 +858,7 @@ make proto
 - **CI 门禁**：`.github/workflows/ci.yml` — gofmt/vet/单测（真实 MySQL+Mongo 服务容器）→ 覆盖率 ≥85% 门禁 → compose 部署冒烟并留运行 ID
 - 冒烟脚本：`scripts/smoke-trade.ps1`（S1 正常成交 + S3 售前退款）、`scripts/smoke-late-pay.ps1`（S4 迟到支付）、`scripts/smoke-pages.ps1`（五页面端到端）、`scripts/smoke-http.sh`（Linux/CI）、`scripts/seed-demo.ps1`（六状态 + 三异常演示数据）
 - 数据库：本地 MySQL `root/root`，库 `questions`（单元测试使用独立库 `questions_test` / `questions_test_repo` / `questions_test_handler`）
+- AI 协作规范：[AGENTS.md](AGENTS.md)；Skill 使用闭环留痕：[docs/skill-usage.md](docs/skill-usage.md)
 - 预置账号：`buyer1~3` / `warehouse01` / `support01` / `ops01`，密码均为 `123456`
 - 启动顺序：`go run ./cmd/user` → `go run ./cmd/order` → `go run ./cmd/gateway`
 - 测试与覆盖率：69 条用例全部通过；`go test -coverpkg=./internal/order/... ./internal/order/...` → 模块口径 91.0%（原始数据 `reports/coverage.out`，可视化 `reports/coverage.html`）
