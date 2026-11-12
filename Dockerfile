@@ -1,7 +1,7 @@
 FROM golang:1.25-alpine AS builder
 
-# 国内网络可传 --build-arg GOPROXY=https://goproxy.cn,direct（compose 已默认）
-ARG GOPROXY=https://goproxy.cn,direct
+# 默认官方代理（CI/海外可直连）；国内网络传 --build-arg GOPROXY=https://goproxy.cn,direct
+ARG GOPROXY=https://proxy.golang.org,direct
 ENV GOPROXY=${GOPROXY}
 
 WORKDIR /src

@@ -4,6 +4,12 @@
 #   bash scripts/smoke-http.sh            # Linux/macOS 冒烟
 #   powershell scripts\smoke-pages.ps1 -BaseUrl http://127.0.0.1:18080  # Windows 冒烟
 #   docker compose -f docker-compose.trade.yml down -v
+x-build: &trade-build
+  context: .
+  args:
+    # 镜像内 go mod download 走哪个代理：国内默认 goproxy.cn，CI 用官方代理
+    GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+
 services:
   mysql:
     image: mysql:8.0
@@ -24,7 +30,7 @@ services:
       start_period: 30s
 
   user:
-    build: .
+    build: *trade-build
     command: ["/app/user"]
     restart: on-failure
     volumes:
@@ -36,7 +42,7 @@ services:
       - "9001:9001"
 
   order:
-    build: .
+    build: *trade-build
     command: ["/app/order"]
     restart: on-failure
     environment:
@@ -53,7 +59,7 @@ services:
       - "9100:9100"
 
   gateway:
-    build: .
+    build: *trade-build
     command: ["/app/gateway"]
     restart: on-failure
     volumes:

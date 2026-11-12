@@ -90,8 +90,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 诊断 Go 模块代理可达性
+        run: |
+          for proxy in https://proxy.golang.org https://goproxy.cn; do
+            code=$(curl -s -o /dev/null -m 10 -w '%{http_code}' "$proxy/github.com/gin-gonic/gin/@v/list" || echo timeout)
+            echo "$proxy -> $code"
+          done
+
       - name: 构建镜像并启动题目01 环境
-        run: GATEWAY_PORT=18080 docker compose -f docker-compose.trade.yml up -d --build
+        env:
+          GATEWAY_PORT: "18080"
+        run: |
+          set -euo pipefail
+          # 镜像内 go mod download 的代理：优先官方，失败回退国内镜像
+          if ! GOPROXY=https://proxy.golang.org,direct \
+               docker compose -f docker-compose.trade.yml build 2>&1 | tail -40; then
+            echo "::warning::官方代理构建失败，回退 goproxy.cn"
+            GOPROXY=https://goproxy.cn,direct docker compose -f docker-compose.trade.yml build 2>&1 | tail -40
+          fi
+          docker compose -f docker-compose.trade.yml up -d
 
       - name: HTTP 冒烟（S1/S3/S4 + 运营核查 + 越权）
         run: BASE_URL=http://127.0.0.1:18080 bash scripts/smoke-http.sh
