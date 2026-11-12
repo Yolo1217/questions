@@ -10,5 +10,8 @@ docs/superpowers/
 # Local agent/runtime files
 /.codex/
 /graphify-out/
-/AGENTS.md
 /CLAUDE.md
+/.smoke/
+/cover.out
+/cover
+/data

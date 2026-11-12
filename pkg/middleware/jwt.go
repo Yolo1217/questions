@@ -23,6 +23,7 @@ type JWTConfig struct {
 type JWTClaims struct {
 	UserID string `json:"user_id"`
 	Role   string `json:"role"`
+	Name   string `json:"name"`
 }
 
 type registeredJWTClaims struct {

@@ -14,6 +14,7 @@ message RegisterRequest {
   string account = 1;
   string display_name = 2;
   string password = 3;
+  string role = 4;
 }
 
 message LoginRequest {
@@ -29,4 +30,5 @@ message UserResponse {
   string id = 1;
   string account = 2;
   string display_name = 3;
+  string role = 4;
 }
