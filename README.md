@@ -861,6 +861,6 @@ make proto
 - AI 协作规范：[AGENTS.md](AGENTS.md)；Skill 使用闭环留痕：[docs/skill-usage.md](docs/skill-usage.md)
 - 预置账号：`buyer1~3` / `warehouse01` / `support01` / `ops01`，密码均为 `123456`
 - 启动顺序：`go run ./cmd/user` → `go run ./cmd/order` → `go run ./cmd/gateway`
-- 测试与覆盖率：69 条用例全部通过；`go test -coverpkg=./internal/order/... ./internal/order/...` → 模块口径 91.0%（原始数据 `reports/coverage.out`，可视化 `reports/coverage.html`）
+- 测试与覆盖率：107 个测试函数全部通过；`go test -coverpkg=./internal/order/...,./internal/gateway/...,./pkg/middleware/... ./internal/order/... ./internal/gateway/... ./pkg/middleware/...` → **全部自编生产代码口径 93.1%**（1842 语句，含网关 HTTP 层；原始数据 `reports/coverage.out`，可视化 `reports/coverage.html`）
 - 自验收报告：[docs/验收报告-题目01.md](docs/验收报告-题目01.md)（红线 7 条 + S1–S6 + E01–E18 逐项取证）
 

@@ -6,9 +6,14 @@
 
 | Skill | 阶段 | 作用 |
 |---|---|---|
+| `order-state-machine` | Skill 编写期（2026-11-11 19:47，skill-creator） | 订单状态集合与唯一合法迁移入口表；开发前即冻结"表外迁移一律拒绝并记录"的口径 |
+| `payment-callback-idempotency` | Skill 编写期（2026-11-11 19:52，skill-creator） | 回调幂等三道防线、通知处理固定顺序、支付异常表与禁止事项 |
 | `order-trade-business` | 业务实现期 | 提供交易主链路裁决口径：下单预占、支付入账、售前整单退款、发货登记、库存回补的准入条件与唯一合法结果 |
+| `order-trade-exception-desk` | 异常闭环实现期 | 支付异常工单归属、处置动作与闭环留痕口径 |
 | `order-trade-acceptance` | 自验收期 | 红线 7 条、六场景取证、十八项边界复现（E01–E18）、验收报告格式 |
 | `student-project-audit` | 评分自检 | 交付物完整性、开发顺序、AI 全过程留痕的检查清单 |
+
+**交付归档（2026-11-12）**：全部 5 个自编业务/验收 Skill 原件随仓库交付，见 `docs/skills/*.md`；其中 `order-state-machine` 与 `payment-callback-idempotency` 为 2026-11-11 会话①原始产物，因后续被合并口径的三个 `order-trade-*` Skill 取代而未安装，原件自会话导出（`Golang订单生命周期状态机Skill设计_20261112152051.json`）中恢复归档。注意：`payment-callback-idempotency` 原文写于"验签前置"整改之前，其"先落库再处理"口径已被最终实现修正（见第 2 条），归档仅作过程留痕。
 
 ## 2. Skill 口径驱动的修正（发现 → 修正 → 复检闭环）
 
