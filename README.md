@@ -849,9 +849,13 @@ make proto
 本仓库在 order 服务内实现了「商品与库存 / 订单状态机 / 支付回调幂等 / 售前退款 / 发货登记 / 支付异常闭环 / 运营核查」全链路，并接入买家·仓库·客服·运营四类角色鉴权。
 
 - 实现说明：[docs/题目01-业务实现.md](docs/题目01-业务实现.md)
-- 冒烟脚本：`scripts/smoke-trade.ps1`（S1 正常成交 + S3 售前退款）、`scripts/smoke-late-pay.ps1`（S4 迟到支付）
-- 数据库：本地 MySQL `root/root`，库 `questions`（单元测试使用独立库 `questions_test`）
+- **可操作页面（5 个）**：网关启动后访问 `http://localhost:8080/`
+  - `/buyer.html` 买家 · `/warehouse.html` 仓库 · `/refund.html` 客服退款 · `/exception.html` 客服异常 · `/ops.html` 运营核查
+  - 页面内嵌于网关二进制（`go:embed`），只调用真实 `/api/v1`；截图见 `reports/screenshots/`
+- 冒烟脚本：`scripts/smoke-trade.ps1`（S1 正常成交 + S3 售前退款）、`scripts/smoke-late-pay.ps1`（S4 迟到支付）、`scripts/smoke-pages.ps1`（五页面端到端）、`scripts/seed-demo.ps1`（六状态 + 三异常演示数据）
+- 数据库：本地 MySQL `root/root`，库 `questions`（单元测试使用独立库 `questions_test` / `questions_test_repo` / `questions_test_handler`）
 - 预置账号：`buyer1~3` / `warehouse01` / `support01` / `ops01`，密码均为 `123456`
 - 启动顺序：`go run ./cmd/user` → `go run ./cmd/order` → `go run ./cmd/gateway`
-- 自验收报告：[docs/验收报告-题目01.md](docs/验收报告-题目01.md)（红线 7 条 + S1–S6 + E01–E18 逐项取证，含 3 项非业务缺陷）
+- 测试与覆盖率：69 条用例全部通过；`go test -coverpkg=./internal/order/... ./internal/order/...` → 模块口径 91.0%（原始数据 `reports/coverage.out`，可视化 `reports/coverage.html`）
+- 自验收报告：[docs/验收报告-题目01.md](docs/验收报告-题目01.md)（红线 7 条 + S1–S6 + E01–E18 逐项取证）
 
