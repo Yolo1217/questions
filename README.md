@@ -843,3 +843,15 @@ make proto
 - [详细使用说明](docs/usage.md)：发布 `bw-cli`、安装命令、生成项目、初始化依赖、配置服务、启动验证和扩展业务。
 - [工具组件总览与调用流程](docs/toolkit.md)：配置、日志、中间件、数据库、MongoDB、Redis、ES、Kafka、文件上传等公共工具的调用方式。
 - [MongoDB 调用示例全流程](docs/mongo-call-examples.md)：配置、初始化、repo 封装、note/order/audit 多服务调用示例和测试方式。
+
+## 13. 题目01：小型电商订单交易业务（已实现）
+
+本仓库在 order 服务内实现了「商品与库存 / 订单状态机 / 支付回调幂等 / 售前退款 / 发货登记 / 支付异常闭环 / 运营核查」全链路，并接入买家·仓库·客服·运营四类角色鉴权。
+
+- 实现说明：[docs/题目01-业务实现.md](docs/题目01-业务实现.md)
+- 冒烟脚本：`scripts/smoke-trade.ps1`（S1 正常成交 + S3 售前退款）、`scripts/smoke-late-pay.ps1`（S4 迟到支付）
+- 数据库：本地 MySQL `root/root`，库 `questions`（单元测试使用独立库 `questions_test`）
+- 预置账号：`buyer1~3` / `warehouse01` / `support01` / `ops01`，密码均为 `123456`
+- 启动顺序：`go run ./cmd/user` → `go run ./cmd/order` → `go run ./cmd/gateway`
+- 自验收报告：[docs/验收报告-题目01.md](docs/验收报告-题目01.md)（红线 7 条 + S1–S6 + E01–E18 逐项取证，含 3 项非业务缺陷）
+
