@@ -1,0 +1,3071 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>dto: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/BwCloudWeGo/bw-cli/internal/order/dto/order.go (75.0%)</option>
+				
+				<option value="file1">github.com/BwCloudWeGo/bw-cli/internal/order/dto/trade.go (100.0%)</option>
+				
+				<option value="file2">github.com/BwCloudWeGo/bw-cli/internal/order/entity/id.go (83.3%)</option>
+				
+				<option value="file3">github.com/BwCloudWeGo/bw-cli/internal/order/entity/order.go (92.9%)</option>
+				
+				<option value="file4">github.com/BwCloudWeGo/bw-cli/internal/order/entity/trade.go (100.0%)</option>
+				
+				<option value="file5">github.com/BwCloudWeGo/bw-cli/internal/order/handler/server.go (91.2%)</option>
+				
+				<option value="file6">github.com/BwCloudWeGo/bw-cli/internal/order/handler/trade.go (93.1%)</option>
+				
+				<option value="file7">github.com/BwCloudWeGo/bw-cli/internal/order/model/order.go (100.0%)</option>
+				
+				<option value="file8">github.com/BwCloudWeGo/bw-cli/internal/order/model/trade.go (100.0%)</option>
+				
+				<option value="file9">github.com/BwCloudWeGo/bw-cli/internal/order/repo/gorm_repository.go (94.5%)</option>
+				
+				<option value="file10">github.com/BwCloudWeGo/bw-cli/internal/order/repo/mongo_repository.go (91.5%)</option>
+				
+				<option value="file11">github.com/BwCloudWeGo/bw-cli/internal/order/repo/trade_repository.go (93.0%)</option>
+				
+				<option value="file12">github.com/BwCloudWeGo/bw-cli/internal/order/service/service.go (81.0%)</option>
+				
+				<option value="file13">github.com/BwCloudWeGo/bw-cli/internal/order/service/trade_service.go (88.6%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package dto
+
+import (
+        "time"
+
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+)
+
+// OrderDTO 是 order 用例层返回给 handler 的数据结构。
+// 它不包含 gRPC、HTTP 或 Gorm 标签，避免协议和数据库细节进入服务层。
+type OrderDTO struct {
+        ID          string
+        Name        string
+        Description string
+        CreatedAt   string
+        UpdatedAt   string
+}
+
+// ListOrderDTO 是 order 分页查询的返回结构。
+type ListOrderDTO struct {
+        Items []*OrderDTO
+        Total int64
+}
+
+// FromOrder 将 order 领域聚合转换成 service 对外返回的 DTO。
+func FromOrder(item *entity.Order) *OrderDTO {
+        <span class="cov8" title="1">return &amp;OrderDTO{
+                ID:          item.ID,
+                Name:        item.Name,
+                Description: item.Description,
+                CreatedAt:   formatTime(item.CreatedAt),
+                UpdatedAt:   formatTime(item.UpdatedAt),
+</span>        }
+}
+
+// formatTime 统一时间输出格式；零值时间返回空字符串，避免输出无意义的默认时间。
+func formatTime(value time.Time) string {
+        <span class="cov8" title="1">if value.IsZero() </span>{
+                <span class="cov0" title="0">return ""
+</span>        }
+        <span class="cov8" title="1">return value.Format(time.RFC3339Nano)</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package dto
+
+import "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+
+// UpsertProductCommand 是运营维护商品的入参。
+type UpsertProductCommand struct {
+        ID         string
+        Name       string
+        PriceCents int64
+        Available  int32
+        OnSale     bool
+}
+
+// PlaceOrderCommand 是买家下单入参。
+type PlaceOrderCommand struct {
+        BuyerID   string
+        BuyerName string
+        ProductID string
+        Qty       int32
+}
+
+// PayNotifyCommand 是模拟渠道支付通知入参。
+// Signature 为 HMAC-SHA256 十六进制值，服务端自行计算比对，不接受"已验签"声明。
+type PayNotifyCommand struct {
+        TradeNo     string
+        OrderID     string
+        AmountCents int64
+        Signature   string
+}
+
+// AuditRefundCommand 是客服退款审核入参。
+type AuditRefundCommand struct {
+        OrderID  string
+        Approve  bool
+        Reason   string
+        Operator string
+}
+
+// ShipOrderCommand 是仓库发货登记入参。
+type ShipOrderCommand struct {
+        OrderID    string
+        Carrier    string
+        TrackingNo string
+        Operator   string
+}
+
+// HandleExceptionCommand 是客服从异常表处置入参。
+type HandleExceptionCommand struct {
+        ExceptionID string
+        Action      string // refund | verify | ignore
+        Reason      string
+        Operator    string
+}
+
+// ProductDTO 是商品输出。
+type ProductDTO struct {
+        ID         string
+        Name       string
+        PriceCents int64
+        Available  int32
+        Total      int32
+        OnSale     bool
+}
+
+// LedgerDTO 是台账输出。
+type LedgerDTO struct {
+        Kind        string
+        Time        string
+        Text        string
+        AmountCents int64
+        TradeNo     string
+        Status      string
+}
+
+// TradeOrderDTO 是订单输出（含状态与四类记录）。
+type TradeOrderDTO struct {
+        ID           string
+        BuyerID      string
+        BuyerName    string
+        ProductID    string
+        ProductName  string
+        Qty          int32
+        PriceCents   int64
+        AmountCents  int64
+        Status       string
+        CreatedAt    string
+        Deadline     string
+        PaidAt       string
+        ClosedReason string
+        Carrier      string
+        TrackingNo   string
+        RejectReason string
+        RefundFail   bool
+        Ledgers      []LedgerDTO
+}
+
+// ListTradeOrderDTO 是订单列表输出。
+type ListTradeOrderDTO struct {
+        Items []*TradeOrderDTO
+        Total int64
+}
+
+// PayNotifyResult 是回调处理结果（响应约定：重复返回成功，验签失败/未完成返回失败码）。
+type PayNotifyResult struct {
+        Success   bool
+        Code      string
+        Message   string
+        Duplicate bool
+}
+
+// AuditRefundResult 是退款审核结果：Duplicate=true 表示重复提交按幂等返回成功。
+type AuditRefundResult struct {
+        Order     *TradeOrderDTO
+        Duplicate bool
+        Message   string
+}
+
+// PayCallbackDTO 是渠道回调记录输出，供客服/运营用渠道流水号反查处理结果。
+type PayCallbackDTO struct {
+        TradeNo         string
+        OrderID         string
+        AmountCents     int64
+        Status          string
+        Hits            int32
+        CreatedAt       string
+        UpdatedAt       string
+        ExceptionType   string
+        ExceptionStatus string
+}
+
+// ExceptionPayDTO 是支付异常输出。
+type ExceptionPayDTO struct {
+        ID                 string
+        Type               string
+        OrderID            string
+        TradeNo            string
+        ChannelAmountCents int64
+        SystemAmountCents  int64
+        Status             string
+        Handler            string
+        Result             string
+        CreatedAt          string
+}
+
+// TradeSummaryDTO 是运营核查汇总输出。
+type TradeSummaryDTO struct {
+        PaidTotalCents     int64
+        RefundedTotalCents int64
+        AvailableTotal     int32
+        ReservedTotal      int32
+        ExceptionPending   int32
+        OrdersByStatus     map[string]int32
+}
+
+// FromProduct 将商品实体转为输出 DTO。
+func FromProduct(item *entity.Product) *ProductDTO {
+        <span class="cov8" title="1">return &amp;ProductDTO{
+                ID:         item.ID,
+                Name:       item.Name,
+                PriceCents: item.PriceCents,
+                Available:  item.Available,
+                Total:      item.Total,
+                OnSale:     item.OnSale,
+</span>        }
+}
+
+// FromTradeOrder 将订单实体与台账转为输出 DTO。
+func FromTradeOrder(item *entity.TradeOrder, ledgers []entity.Ledger) *TradeOrderDTO {
+        <span class="cov8" title="1">output := &amp;TradeOrderDTO{
+                ID:           item.ID,
+                BuyerID:      item.BuyerID,
+                BuyerName:    item.BuyerName,
+                ProductID:    item.ProductID,
+                ProductName:  item.ProductName,
+                Qty:          item.Qty,
+                PriceCents:   item.PriceCents,
+                AmountCents:  item.AmountCents(),
+                Status:       item.Status,
+                CreatedAt:    formatTime(item.CreatedAt),
+                Deadline:     formatTime(item.Deadline),
+                ClosedReason: item.ClosedReason,
+                Carrier:      item.Carrier,
+                TrackingNo:   item.TrackingNo,
+                RejectReason: item.RejectReason,
+                RefundFail:   item.RefundFail,
+                Ledgers:      make([]LedgerDTO, 0, len(ledgers)),
+</span>        }
+        <span class="cov8" title="1">if !item.PaidAt.IsZero() </span>{
+                <span class="cov8" title="1">output.PaidAt = formatTime(item.PaidAt)
+</span>        }
+        <span class="cov8" title="1">for _, ledger := range ledgers </span>{
+                <span class="cov8" title="1">output.Ledgers = append(output.Ledgers, LedgerDTO{
+                        Kind:        ledger.Kind,
+                        Time:        formatTime(ledger.Time),
+                        Text:        ledger.Text,
+                        AmountCents: ledger.AmountCents,
+                        TradeNo:     ledger.TradeNo,
+                        Status:      ledger.Status,
+                })
+</span>        }
+        <span class="cov8" title="1">return output</span>
+}
+
+// FromExceptionPay 将异常实体转为输出 DTO。
+func FromExceptionPay(item *entity.ExceptionPay) *ExceptionPayDTO {
+        <span class="cov8" title="1">return &amp;ExceptionPayDTO{
+                ID:                 item.ID,
+                Type:               item.Type,
+                OrderID:            item.OrderID,
+                TradeNo:            item.TradeNo,
+                ChannelAmountCents: item.ChannelAmountCents,
+                SystemAmountCents:  item.SystemAmountCents,
+                Status:             item.Status,
+                Handler:            item.Handler,
+                Result:             item.Result,
+                CreatedAt:          formatTime(item.CreatedAt),
+</span>        }
+}
+
+// FromPayCallback 将回调记录（可关联异常）转为输出 DTO。
+func FromPayCallback(item *entity.PayCallback, exception *entity.ExceptionPay) *PayCallbackDTO {
+        <span class="cov8" title="1">output := &amp;PayCallbackDTO{
+                TradeNo:     item.TradeNo,
+                OrderID:     item.OrderID,
+                AmountCents: item.AmountCents,
+                Status:      item.Status,
+                Hits:        item.Hits,
+                CreatedAt:   formatTime(item.CreatedAt),
+                UpdatedAt:   formatTime(item.UpdatedAt),
+</span>        }
+        <span class="cov8" title="1">if exception != nil </span>{
+                <span class="cov8" title="1">output.ExceptionType = exception.Type
+                output.ExceptionStatus = exception.Status
+</span>        }
+        <span class="cov8" title="1">return output</span>
+}
+
+// FromSummary 将汇总实体转为输出 DTO。
+func FromSummary(item *entity.Summary) *TradeSummaryDTO {
+        <span class="cov8" title="1">return &amp;TradeSummaryDTO{
+                PaidTotalCents:     item.PaidTotalCents,
+                RefundedTotalCents: item.RefundedTotalCents,
+                AvailableTotal:     item.AvailableTotal,
+                ReservedTotal:      item.ReservedTotal,
+                ExceptionPending:   item.ExceptionPending,
+                OrdersByStatus:     item.OrdersByStatus,
+</span>        }
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package entity
+
+import (
+        "crypto/rand"
+        "encoding/hex"
+        "time"
+)
+
+// NewTradeOrderID 生成订单号：SO + yyyyMMddHHmmss + 4 位随机十六进制。
+func NewTradeOrderID() string {
+        <span class="cov8" title="1">return "SO" + time.Now().Format("20060102150405") + randomHex(2)
+</span>}
+
+// NewExceptionPayID 生成支付异常记录号。
+func NewExceptionPayID() string {
+        <span class="cov8" title="1">return "EX" + time.Now().Format("20060102150405") + randomHex(2)
+</span>}
+
+func randomHex(n int) string {
+        <span class="cov8" title="1">buf := make([]byte, n)
+        if _, err := rand.Read(buf); err != nil </span>{
+                <span class="cov0" title="0">return "0000"[:n*2]
+</span>        }
+        <span class="cov8" title="1">return hex.EncodeToString(buf)</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package entity
+
+import (
+        "errors"
+        "strings"
+        "time"
+
+        "github.com/google/uuid"
+)
+
+var (
+        ErrOrderNotFound = errors.New("order not found")
+        ErrInvalidOrder  = errors.New("invalid order")
+)
+
+// Order 是 order 业务服务的聚合根。
+// 业务明确后，请将 Name 和 Description 替换为真实业务字段。
+type Order struct {
+        ID          string
+        Name        string
+        Description string
+        CreatedAt   time.Time
+        UpdatedAt   time.Time
+}
+
+// NewOrder 校验输入，并创建带框架管理身份字段的聚合。
+func NewOrder(name string, description string) (*Order, error) {
+        <span class="cov8" title="1">name = strings.TrimSpace(name)
+        description = strings.TrimSpace(description)
+        if name == "" </span>{
+                <span class="cov8" title="1">return nil, ErrInvalidOrder
+</span>        }
+        <span class="cov8" title="1">now := time.Now().UTC()
+        return &amp;Order{
+                ID:          uuid.NewString(),
+                Name:        name,
+                Description: description,
+                CreatedAt:   now,
+                UpdatedAt:   now,
+        }, nil</span>
+}
+
+// Update 修改可变字段，并把校验保留在业务实体内部。
+func (item *Order) Update(name string, description string) error {
+        <span class="cov8" title="1">name = strings.TrimSpace(name)
+        description = strings.TrimSpace(description)
+        if item == nil || item.ID == "" || name == "" </span>{
+                <span class="cov0" title="0">return ErrInvalidOrder
+</span>        }
+        <span class="cov8" title="1">item.Name = name
+        item.Description = description
+        item.UpdatedAt = time.Now().UTC()
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package entity
+
+import (
+        "context"
+        "errors"
+        "time"
+)
+
+// 题目01 交易域业务错误：handler 层统一映射为 AppError。
+var (
+        ErrProductNotFound     = errors.New("product not found")
+        ErrProductOffSale      = errors.New("product off sale")
+        ErrInsufficientStock   = errors.New("insufficient stock")
+        ErrInvalidQty          = errors.New("invalid quantity")
+        ErrTradeOrderNotFound  = errors.New("trade order not found")
+        ErrPermissionDenied    = errors.New("permission denied")
+        ErrInvalidTransition   = errors.New("invalid status transition")
+        ErrCarrierRequired     = errors.New("carrier and tracking number are required")
+        ErrReasonRequired      = errors.New("reason is required")
+        ErrExceptionNotFound   = errors.New("exception not found")
+        ErrExceptionClosed     = errors.New("exception already closed")
+        ErrDuplicateTradeNo    = errors.New("duplicate channel trade no")
+        ErrOrderAlreadyShipped = errors.New("order already shipped")
+        ErrOrderRefunding      = errors.New("order is refunding, shipping blocked")
+        ErrRefundNotAllowed    = errors.New("refund not allowed for shipped order")
+        ErrChannelRefundFailed = errors.New("channel refund failed")
+        ErrExceptionNoRefund   = errors.New("no order bound to this exception, cannot refund")
+        ErrCallbackNotFound    = errors.New("pay callback not found")
+        ErrSignatureMismatch   = errors.New("pay callback signature mismatch")
+        ErrOrderClosed         = errors.New("order closed, cannot ship")
+        ErrOrderRefunded       = errors.New("order refunded, cannot ship")
+)
+
+// 订单状态机（最小集）：迁移表是唯一合法入口。
+const (
+        OrderStatusCreated   = "CREATED"   // 待支付，库存预占
+        OrderStatusPaid      = "PAID"      // 待发货，预占转实扣
+        OrderStatusRefunding = "REFUNDING" // 退款审核中，冻结发货
+        OrderStatusShipped   = "SHIPPED"   // 已发货
+        OrderStatusClosed    = "CLOSED"    // 已关闭（取消/超时），释放预占
+        OrderStatusRefunded  = "REFUNDED"  // 已退款
+)
+
+// 订单来源。
+const (
+        OrderOriginSale = "sale" // 正常售前退款：退款成功回补库存
+        OrderOriginLate = "late" // 迟到支付退款：不回补库存（已释放，回补即超卖）
+)
+
+// 台账类别。
+const (
+        LedgerStock     = "stock"
+        LedgerPay       = "pay"
+        LedgerRefund    = "refund"
+        LedgerShip      = "ship"
+        LedgerException = "exception"
+)
+
+// 支付异常类型（至少覆盖五类）。
+const (
+        ExcLatePay        = "关单后到账"
+        ExcNoOwner        = "无主支付"
+        ExcAmountMismatch = "金额不符"
+        ExcDoubleCharge   = "重复扣款"
+        ExcBadSignature   = "验签失败"
+)
+
+// 异常状态。
+const (
+        ExcStatusPending = "待处理"
+        ExcStatusClosed  = "已闭环"
+)
+
+// 回调记录状态（处理幂等：RECEIVED → PROCESSING → DONE/FAILED）。
+const (
+        CallbackReceived   = "RECEIVED"
+        CallbackProcessing = "PROCESSING"
+        CallbackDone       = "DONE"
+        CallbackFailed     = "FAILED"
+)
+
+// Product 是商品聚合：运营维护售价与可售数量。
+type Product struct {
+        ID         string
+        Name       string
+        PriceCents int64
+        Total      int32
+        Available  int32
+        OnSale     bool
+}
+
+// TradeOrder 是交易订单聚合根。
+type TradeOrder struct {
+        ID           string
+        BuyerID      string
+        BuyerName    string
+        ProductID    string
+        ProductName  string
+        Qty          int32
+        PriceCents   int64 // 下单时价格快照，后续调价不影响
+        Status       string
+        CreatedAt    time.Time
+        Deadline     time.Time // 待支付保留截止时间（服务端时间判定）
+        PaidAt       time.Time
+        ClosedReason string
+        Carrier      string
+        TrackingNo   string
+        RejectReason string
+        RefundFail   bool
+        Origin       string // sale | late
+        UpdatedAt    time.Time
+}
+
+// AmountCents 返回订单应付金额。
+func (o *TradeOrder) AmountCents() int64 { <span class="cov8" title="1">return o.PriceCents * int64(o.Qty) }</span>
+
+// Ledger 是统一台账条目（库存/收款/退款/发货/异常共用一张表）。
+type Ledger struct {
+        Kind        string
+        OrderID     string
+        Text        string
+        AmountCents int64
+        TradeNo     string
+        Status      string
+        Time        time.Time
+}
+
+// ExceptionPay 是支付异常表条目：必须有可查记录并能闭环。
+type ExceptionPay struct {
+        ID                 string
+        Type               string
+        OrderID            string // 无主支付时为空
+        TradeNo            string
+        ChannelAmountCents int64
+        SystemAmountCents  int64 // 无主支付时为 -1
+        Status             string
+        Handler            string
+        Result             string
+        CreatedAt          time.Time
+        UpdatedAt          time.Time
+}
+
+// PayCallback 是渠道回调记录表条目：入口幂等键 channel_trade_no。
+type PayCallback struct {
+        TradeNo     string
+        OrderID     string
+        AmountCents int64
+        Status      string
+        Hits        int32
+        CreatedAt   time.Time
+        UpdatedAt   time.Time
+}
+
+// Summary 是运营核查汇总：可售 + 预占 + 已收 + 已退，用于活动结束后对账。
+type Summary struct {
+        PaidTotalCents     int64
+        RefundedTotalCents int64
+        AvailableTotal     int32
+        ReservedTotal      int32 // 待支付订单已预占件数
+        ExceptionPending   int32
+        OrdersByStatus     map[string]int32
+}
+
+// TradeRepository 定义交易域所需的持久化行为。
+// 全部状态迁移通过 TransitionOrder 的条件更新实现：受影响行数为 0 即迁移失败。
+type TradeRepository interface {
+        // 商品
+        ListProducts(ctx context.Context) ([]*Product, error)
+        FindProduct(ctx context.Context, id string) (*Product, error)
+        SaveProduct(ctx context.Context, product *Product) error
+        HasAnyProduct(ctx context.Context) (bool, error)
+
+        // 订单
+        PlaceOrderTx(ctx context.Context, buyerID string, buyerName string, productID string, qty int32, keep time.Duration) (*TradeOrder, error)
+        FindTradeOrder(ctx context.Context, id string) (*TradeOrder, error)
+        ListTradeOrders(ctx context.Context, buyerID string, status string) ([]*TradeOrder, int64, error)
+        // TransitionOrder 条件更新状态：WHERE id=? AND status=from。rows=0 返回 (false, nil)。
+        // stockDelta&gt;0 时在同一事务内回补商品可售数量；mutate 在抢占成功后调用，
+        // 可修改订单字段并返回随事务一起写入的台账条目。
+        TransitionOrder(ctx context.Context, orderID string, from string, to string, stockDelta int32, mutate func(order *TradeOrder) ([]Ledger, error)) (bool, error)
+        ListExpiredCreated(ctx context.Context, now time.Time) ([]*TradeOrder, error)
+        // MarkRefundFailed 记录渠道退款明确失败：订单保持 REFUNDING，仅置失败标记并写失败流水。
+        MarkRefundFailed(ctx context.Context, orderID string) (bool, error)
+        // AppendLedger 仅追加台账（用于迟到支付退款：订单状态不变、不回补库存）。
+        AppendLedger(ctx context.Context, ledger *Ledger) error
+
+        // 回调记录（入口幂等）
+        FindCallback(ctx context.Context, tradeNo string) (*PayCallback, error)
+        // ListCallbacks 按渠道交易号/订单号关键词与处理状态查询回调记录。
+        ListCallbacks(ctx context.Context, keyword string, status string) ([]*PayCallback, error)
+        SaveCallback(ctx context.Context, cb *PayCallback) error // 唯一索引冲突返回 ErrDuplicateTradeNo
+        UpdateCallbackStatus(ctx context.Context, tradeNo string, status string) error
+        // IncrementCallbackHits 重复通知仅计数，不改变处理状态。
+        IncrementCallbackHits(ctx context.Context, tradeNo string) error
+
+        // 支付异常表
+        SaveException(ctx context.Context, ex *ExceptionPay) error
+        FindException(ctx context.Context, id string) (*ExceptionPay, error)
+        // FindExceptionByTradeNo 用渠道交易号反查异常记录（无则返回 nil, nil）。
+        FindExceptionByTradeNo(ctx context.Context, tradeNo string) (*ExceptionPay, error)
+        ListExceptions(ctx context.Context, onlyPending bool) ([]*ExceptionPay, error)
+        CloseException(ctx context.Context, id string, handler string, result string) error
+
+        // 台账与汇总
+        ListLedgers(ctx context.Context, orderID string) ([]Ledger, error)
+        TradeSummary(ctx context.Context) (*Summary, error)
+}
+
+// NewExceptionID 生成异常记录 ID。
+func NewExceptionID(seq int64) string {
+        <span class="cov8" title="1">return "EX" + time.Now().UTC().Format("20060102150405") + "-" + intToPadded(seq)
+</span>}
+
+func intToPadded(v int64) string {
+        <span class="cov8" title="1">buf := [6]byte{}
+        for i := 5; i &gt;= 0; i-- </span>{
+                <span class="cov8" title="1">buf[i] = byte('0' + v%10)
+                v /= 10
+</span>        }
+        <span class="cov8" title="1">return string(buf[:])</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package handler
+
+import (
+        "context"
+        stderrors "errors"
+
+        "go.uber.org/zap"
+
+        orderv1 "github.com/BwCloudWeGo/bw-cli/api/gen/order/v1"
+        "github.com/BwCloudWeGo/bw-cli/internal/order/dto"
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+        "github.com/BwCloudWeGo/bw-cli/internal/order/service"
+        apperrors "github.com/BwCloudWeGo/bw-cli/pkg/errors"
+)
+
+// Server 将 order gRPC 请求适配到 service 用例。
+type Server struct {
+        orderv1.UnimplementedOrderServiceServer
+        svc   *service.Service
+        trade *service.TradeService
+        log   *zap.Logger
+}
+
+// NewServer 创建 order gRPC 服务端适配器（trade 承载题目01 交易用例）。
+func NewServer(svc *service.Service, trade *service.TradeService, log *zap.Logger) *Server {
+        <span class="cov8" title="1">if log == nil </span>{
+                <span class="cov8" title="1">log = zap.NewNop()
+</span>        }
+        <span class="cov8" title="1">if trade == nil </span>{
+                <span class="cov0" title="0">panic("order handler: trade service is required")</span>
+        }
+        <span class="cov8" title="1">return &amp;Server{svc: svc, trade: trade, log: log}</span>
+}
+
+// CreateOrder 处理创建 RPC。
+func (s *Server) CreateOrder(ctx context.Context, req *orderv1.CreateOrderRequest) (*orderv1.OrderResponse, error) {
+        <span class="cov8" title="1">item, err := s.svc.Create(ctx, dto.CreateCommand{
+                Name:        req.GetName(),
+                Description: req.GetDescription(),
+        })
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapOrderError(err)
+</span>        }
+        <span class="cov8" title="1">return toProto(item), nil</span>
+}
+
+// GetOrder 处理按 ID 查询。
+func (s *Server) GetOrder(ctx context.Context, req *orderv1.GetOrderRequest) (*orderv1.OrderResponse, error) {
+        <span class="cov8" title="1">item, err := s.svc.Get(ctx, req.GetId())
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapOrderError(err)
+</span>        }
+        <span class="cov8" title="1">return toProto(item), nil</span>
+}
+
+// ListOrders 处理分页列表查询。
+func (s *Server) ListOrders(ctx context.Context, req *orderv1.ListOrdersRequest) (*orderv1.ListOrdersResponse, error) {
+        <span class="cov8" title="1">list, err := s.svc.List(ctx, dto.ListCommand{
+                Page:     req.GetPage(),
+                PageSize: req.GetPageSize(),
+        })
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, mapOrderError(err)
+</span>        }
+        <span class="cov8" title="1">resp := &amp;orderv1.ListOrdersResponse{
+                Items: make([]*orderv1.OrderResponse, 0, len(list.Items)),
+                Total: list.Total,
+</span>        }
+        <span class="cov8" title="1">for _, item := range list.Items </span>{
+                <span class="cov8" title="1">resp.Items = append(resp.Items, toProto(item))
+</span>        }
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+// UpdateOrder 处理按 ID 更新。
+func (s *Server) UpdateOrder(ctx context.Context, req *orderv1.UpdateOrderRequest) (*orderv1.OrderResponse, error) {
+        <span class="cov8" title="1">item, err := s.svc.Update(ctx, dto.UpdateCommand{
+                ID:          req.GetId(),
+                Name:        req.GetName(),
+                Description: req.GetDescription(),
+        })
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapOrderError(err)
+</span>        }
+        <span class="cov8" title="1">return toProto(item), nil</span>
+}
+
+// DeleteOrder 处理按 ID 删除。
+func (s *Server) DeleteOrder(ctx context.Context, req *orderv1.DeleteOrderRequest) (*orderv1.DeleteOrderResponse, error) {
+        <span class="cov8" title="1">if err := s.svc.Delete(ctx, req.GetId()); err != nil </span>{
+                <span class="cov8" title="1">return nil, mapOrderError(err)
+</span>        }
+        <span class="cov8" title="1">return &amp;orderv1.DeleteOrderResponse{Success: true}, nil</span>
+}
+
+func toProto(item *dto.OrderDTO) *orderv1.OrderResponse {
+        <span class="cov8" title="1">return &amp;orderv1.OrderResponse{
+                Id:          item.ID,
+                Name:        item.Name,
+                Description: item.Description,
+                CreatedAt:   item.CreatedAt,
+                UpdatedAt:   item.UpdatedAt,
+</span>        }
+}
+
+func mapOrderError(err error) error {
+        <span class="cov8" title="1">switch </span>{
+        case stderrors.Is(err, entity.ErrInvalidOrder):
+                <span class="cov8" title="1">return apperrors.InvalidArgument("invalid_order", "invalid order input")</span>
+        case stderrors.Is(err, entity.ErrOrderNotFound):
+                <span class="cov8" title="1">return apperrors.NotFound("order_not_found", "order not found")</span>
+        default:
+                <span class="cov0" title="0">return apperrors.Wrap(apperrors.KindInternal, "order_service_error", "order service error", err)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package handler
+
+import (
+        "context"
+        stderrors "errors"
+
+        orderv1 "github.com/BwCloudWeGo/bw-cli/api/gen/order/v1"
+        "github.com/BwCloudWeGo/bw-cli/internal/order/dto"
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+        apperrors "github.com/BwCloudWeGo/bw-cli/pkg/errors"
+)
+
+// ListProducts 返回商品列表。
+func (s *Server) ListProducts(ctx context.Context, _ *orderv1.ListProductsRequest) (*orderv1.ListProductsResponse, error) {
+        <span class="cov8" title="1">items, err := s.trade.ListProducts(ctx)
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">resp := &amp;orderv1.ListProductsResponse{Items: make([]*orderv1.ProductResponse, 0, len(items))}
+        for _, item := range items </span>{
+                <span class="cov0" title="0">resp.Items = append(resp.Items, &amp;orderv1.ProductResponse{
+                        Id:         item.ID,
+                        Name:       item.Name,
+                        PriceCents: item.PriceCents,
+                        Available:  item.Available,
+                        Total:      item.Total,
+                        OnSale:     item.OnSale,
+                })
+</span>        }
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+// UpsertProduct 运营维护商品（上下架、价格、可售数量）。
+func (s *Server) UpsertProduct(ctx context.Context, req *orderv1.UpsertProductRequest) (*orderv1.ProductResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.UpsertProduct(ctx, dto.UpsertProductCommand{
+                ID:         req.GetId(),
+                Name:       req.GetName(),
+                PriceCents: req.GetPriceCents(),
+                Available:  req.GetAvailable(),
+                OnSale:     req.GetOnSale(),
+        })
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return &amp;orderv1.ProductResponse{
+                Id:         item.ID,
+                Name:       item.Name,
+                PriceCents: item.PriceCents,
+                Available:  item.Available,
+                Total:      item.Total,
+                OnSale:     item.OnSale,
+        }, nil</span>
+}
+
+// PlaceOrder 买家下单。
+func (s *Server) PlaceOrder(ctx context.Context, req *orderv1.PlaceOrderRequest) (*orderv1.OrderDetailResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.PlaceOrder(ctx, dto.PlaceOrderCommand{
+                BuyerID:   req.GetBuyerId(),
+                BuyerName: req.GetBuyerName(),
+                ProductID: req.GetProductId(),
+                Qty:       req.GetQty(),
+        })
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return toTradeProto(item), nil</span>
+}
+
+// CancelOrder 买家取消待支付订单。
+func (s *Server) CancelOrder(ctx context.Context, req *orderv1.CancelOrderRequest) (*orderv1.OrderDetailResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.CancelOrder(ctx, req.GetOrderId(), req.GetBuyerId())
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return toTradeProto(item), nil</span>
+}
+
+// ApplyRefund 买家申请售前整单退款。
+func (s *Server) ApplyRefund(ctx context.Context, req *orderv1.ApplyRefundRequest) (*orderv1.OrderDetailResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.ApplyRefund(ctx, req.GetOrderId(), req.GetBuyerId())
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return toTradeProto(item), nil</span>
+}
+
+// ListMyOrders 返回当前买家订单。
+func (s *Server) ListMyOrders(ctx context.Context, req *orderv1.ListMyOrdersRequest) (*orderv1.ListTradeOrdersResponse, error) {
+        <span class="cov8" title="1">return s.listOrders(ctx, req.GetBuyerId(), "")
+</span>}
+
+// ListOrdersByStatus 按状态过滤订单（仓库/客服/运营视图）。
+func (s *Server) ListOrdersByStatus(ctx context.Context, req *orderv1.ListOrdersByStatusRequest) (*orderv1.ListTradeOrdersResponse, error) {
+        <span class="cov8" title="1">return s.listOrders(ctx, req.GetBuyerId(), req.GetStatus())
+</span>}
+
+// GetTradeOrder 返回订单详情（含四类记录）。
+func (s *Server) GetTradeOrder(ctx context.Context, req *orderv1.GetTradeOrderRequest) (*orderv1.OrderDetailResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.GetOrder(ctx, req.GetId())
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return toTradeProto(item), nil</span>
+}
+
+// PayNotify 处理渠道支付通知。
+func (s *Server) PayNotify(ctx context.Context, req *orderv1.PayNotifyRequest) (*orderv1.PayNotifyResponse, error) {
+        <span class="cov8" title="1">result, err := s.trade.PayNotify(ctx, dto.PayNotifyCommand{
+                TradeNo:     req.GetChannelTradeNo(),
+                OrderID:     req.GetOrderId(),
+                AmountCents: req.GetAmountCents(),
+                Signature:   req.GetSignature(),
+        })
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return &amp;orderv1.PayNotifyResponse{
+                Success:   result.Success,
+                Code:      result.Code,
+                Message:   result.Message,
+                Duplicate: result.Duplicate,
+        }, nil</span>
+}
+
+// AuditRefund 客服审核退款（重复提交按幂等返回成功）。
+func (s *Server) AuditRefund(ctx context.Context, req *orderv1.AuditRefundRequest) (*orderv1.AuditRefundResponse, error) {
+        <span class="cov8" title="1">result, err := s.trade.AuditRefund(ctx, dto.AuditRefundCommand{
+                OrderID:  req.GetOrderId(),
+                Approve:  req.GetApprove(),
+                Reason:   req.GetReason(),
+                Operator: req.GetOperator(),
+        })
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return &amp;orderv1.AuditRefundResponse{
+                Order:     toTradeProto(result.Order),
+                Duplicate: result.Duplicate,
+                Message:   result.Message,
+        }, nil</span>
+}
+
+// GetPayCallback 用渠道交易号反查回调处理结果。
+func (s *Server) GetPayCallback(ctx context.Context, req *orderv1.GetPayCallbackRequest) (*orderv1.PayCallbackResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.GetCallback(ctx, req.GetTradeNo())
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return toCallbackProto(item), nil</span>
+}
+
+// ListPayCallbacks 按关键词/状态查询回调记录。
+func (s *Server) ListPayCallbacks(ctx context.Context, req *orderv1.ListPayCallbacksRequest) (*orderv1.ListPayCallbacksResponse, error) {
+        <span class="cov8" title="1">items, err := s.trade.ListCallbacks(ctx, req.GetKeyword(), req.GetStatus())
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">resp := &amp;orderv1.ListPayCallbacksResponse{Items: make([]*orderv1.PayCallbackResponse, 0, len(items))}
+        for _, item := range items </span>{
+                <span class="cov8" title="1">resp.Items = append(resp.Items, toCallbackProto(item))
+</span>        }
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+func toCallbackProto(item *dto.PayCallbackDTO) *orderv1.PayCallbackResponse {
+        <span class="cov8" title="1">return &amp;orderv1.PayCallbackResponse{
+                TradeNo:         item.TradeNo,
+                OrderId:         item.OrderID,
+                AmountCents:     item.AmountCents,
+                Status:          item.Status,
+                Hits:            item.Hits,
+                CreatedAt:       item.CreatedAt,
+                UpdatedAt:       item.UpdatedAt,
+                ExceptionType:   item.ExceptionType,
+                ExceptionStatus: item.ExceptionStatus,
+</span>        }
+}
+
+// ShipOrder 仓库发货登记。
+func (s *Server) ShipOrder(ctx context.Context, req *orderv1.ShipOrderRequest) (*orderv1.OrderDetailResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.ShipOrder(ctx, dto.ShipOrderCommand{
+                OrderID:    req.GetOrderId(),
+                Carrier:    req.GetCarrier(),
+                TrackingNo: req.GetTrackingNo(),
+                Operator:   req.GetOperator(),
+        })
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return toTradeProto(item), nil</span>
+}
+
+// ListExceptionPays 查询支付异常。
+func (s *Server) ListExceptionPays(ctx context.Context, req *orderv1.ListExceptionPaysRequest) (*orderv1.ListExceptionPaysResponse, error) {
+        <span class="cov8" title="1">items, err := s.trade.ListExceptions(ctx, req.GetOnlyPending())
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">resp := &amp;orderv1.ListExceptionPaysResponse{Items: make([]*orderv1.ExceptionPayResponse, 0, len(items))}
+        for _, item := range items </span>{
+                <span class="cov8" title="1">resp.Items = append(resp.Items, &amp;orderv1.ExceptionPayResponse{
+                        Id:                 item.ID,
+                        Type:               item.Type,
+                        OrderId:            item.OrderID,
+                        TradeNo:            item.TradeNo,
+                        ChannelAmountCents: item.ChannelAmountCents,
+                        SystemAmountCents:  item.SystemAmountCents,
+                        Status:             item.Status,
+                        Handler:            item.Handler,
+                        Result:             item.Result,
+                        CreatedAt:          item.CreatedAt,
+                })
+</span>        }
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+// HandleExceptionPay 客服从异常表处置。
+func (s *Server) HandleExceptionPay(ctx context.Context, req *orderv1.HandleExceptionPayRequest) (*orderv1.ExceptionPayResponse, error) {
+        <span class="cov8" title="1">item, err := s.trade.HandleException(ctx, dto.HandleExceptionCommand{
+                ExceptionID: req.GetExceptionId(),
+                Action:      req.GetAction(),
+                Reason:      req.GetReason(),
+                Operator:    req.GetOperator(),
+        })
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return &amp;orderv1.ExceptionPayResponse{
+                Id:                 item.ID,
+                Type:               item.Type,
+                OrderId:            item.OrderID,
+                TradeNo:            item.TradeNo,
+                ChannelAmountCents: item.ChannelAmountCents,
+                SystemAmountCents:  item.SystemAmountCents,
+                Status:             item.Status,
+                Handler:            item.Handler,
+                Result:             item.Result,
+                CreatedAt:          item.CreatedAt,
+        }, nil</span>
+}
+
+// TradeSummary 返回运营核查汇总。
+func (s *Server) TradeSummary(ctx context.Context, _ *orderv1.TradeSummaryRequest) (*orderv1.TradeSummaryResponse, error) {
+        <span class="cov8" title="1">summary, err := s.trade.Summary(ctx)
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">return &amp;orderv1.TradeSummaryResponse{
+                PaidTotalCents:     summary.PaidTotalCents,
+                RefundedTotalCents: summary.RefundedTotalCents,
+                AvailableTotal:     summary.AvailableTotal,
+                ReservedTotal:      summary.ReservedTotal,
+                ExceptionPending:   summary.ExceptionPending,
+                OrdersByStatus:     summary.OrdersByStatus,
+        }, nil</span>
+}
+
+func (s *Server) listOrders(ctx context.Context, buyerID string, status string) (*orderv1.ListTradeOrdersResponse, error) {
+        <span class="cov8" title="1">list, err := s.trade.ListOrders(ctx, buyerID, status)
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, mapTradeError(err)
+</span>        }
+        <span class="cov8" title="1">resp := &amp;orderv1.ListTradeOrdersResponse{Items: make([]*orderv1.OrderDetailResponse, 0, len(list.Items)), Total: list.Total}
+        for _, item := range list.Items </span>{
+                <span class="cov8" title="1">resp.Items = append(resp.Items, toTradeProto(item))
+</span>        }
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+func toTradeProto(item *dto.TradeOrderDTO) *orderv1.OrderDetailResponse {
+        <span class="cov8" title="1">resp := &amp;orderv1.OrderDetailResponse{
+                Id:           item.ID,
+                BuyerId:      item.BuyerID,
+                BuyerName:    item.BuyerName,
+                ProductId:    item.ProductID,
+                ProductName:  item.ProductName,
+                Qty:          item.Qty,
+                PriceCents:   item.PriceCents,
+                AmountCents:  item.AmountCents,
+                Status:       item.Status,
+                CreatedAt:    item.CreatedAt,
+                Deadline:     item.Deadline,
+                PaidAt:       item.PaidAt,
+                ClosedReason: item.ClosedReason,
+                Carrier:      item.Carrier,
+                TrackingNo:   item.TrackingNo,
+                RejectReason: item.RejectReason,
+                RefundFail:   item.RefundFail,
+                Ledgers:      make([]*orderv1.LedgerEntry, 0, len(item.Ledgers)),
+</span>        }
+        <span class="cov8" title="1">for _, ledger := range item.Ledgers </span>{
+                <span class="cov8" title="1">resp.Ledgers = append(resp.Ledgers, &amp;orderv1.LedgerEntry{
+                        Kind:        ledger.Kind,
+                        Time:        ledger.Time,
+                        Text:        ledger.Text,
+                        AmountCents: ledger.AmountCents,
+                        TradeNo:     ledger.TradeNo,
+                        Status:      ledger.Status,
+                })
+</span>        }
+        <span class="cov8" title="1">return resp</span>
+}
+
+// mapTradeError 将交易域业务错误映射为稳定的应用错误（HTTP 4xx / gRPC 状态码）。
+func mapTradeError(err error) error {
+        <span class="cov8" title="1">switch </span>{
+        case stderrors.Is(err, entity.ErrPermissionDenied):
+                <span class="cov8" title="1">return apperrors.New(apperrors.KindUnauthorized, "permission_denied", "越权拒绝：只能操作本人订单")</span>
+        case stderrors.Is(err, entity.ErrInsufficientStock):
+                <span class="cov8" title="1">return apperrors.Conflict("insufficient_stock", "库存不足：条件扣减失败，不产生订单")</span>
+        case stderrors.Is(err, entity.ErrProductOffSale):
+                <span class="cov8" title="1">return apperrors.Conflict("product_off_sale", "商品已下架，拒绝下单")</span>
+        case stderrors.Is(err, entity.ErrProductNotFound):
+                <span class="cov8" title="1">return apperrors.NotFound("product_not_found", "商品不存在")</span>
+        case stderrors.Is(err, entity.ErrInvalidQty):
+                <span class="cov8" title="1">return apperrors.InvalidArgument("invalid_quantity", "每单数量仅 1~2 件")</span>
+        case stderrors.Is(err, entity.ErrTradeOrderNotFound):
+                <span class="cov8" title="1">return apperrors.NotFound("order_not_found", "订单不存在")</span>
+        case stderrors.Is(err, entity.ErrInvalidTransition):
+                <span class="cov8" title="1">return apperrors.Conflict("invalid_status_transition", "当前订单状态不允许该操作")</span>
+        case stderrors.Is(err, entity.ErrOrderRefunding):
+                <span class="cov8" title="1">return apperrors.Conflict("order_refunding", "订单退款审核中，已暂停发货")</span>
+        case stderrors.Is(err, entity.ErrOrderAlreadyShipped):
+                <span class="cov8" title="1">return apperrors.Conflict("order_already_shipped", "订单已发货，每单仅允许登记一次")</span>
+        case stderrors.Is(err, entity.ErrRefundNotAllowed):
+                <span class="cov8" title="1">return apperrors.Conflict("refund_not_allowed", "订单已发货，不受理售前退款")</span>
+        case stderrors.Is(err, entity.ErrCarrierRequired):
+                <span class="cov8" title="1">return apperrors.InvalidArgument("carrier_required", "承运方与运单号均为必填")</span>
+        case stderrors.Is(err, entity.ErrReasonRequired):
+                <span class="cov8" title="1">return apperrors.InvalidArgument("reason_required", "必须填写原因")</span>
+        case stderrors.Is(err, entity.ErrChannelRefundFailed):
+                <span class="cov8" title="1">return apperrors.Conflict("channel_refund_failed", "渠道退款失败：订单保持退款中，待处理记录已保留，可重试")</span>
+        case stderrors.Is(err, entity.ErrExceptionNotFound):
+                <span class="cov8" title="1">return apperrors.NotFound("exception_not_found", "异常记录不存在")</span>
+        case stderrors.Is(err, entity.ErrExceptionClosed):
+                <span class="cov8" title="1">return apperrors.Conflict("exception_closed", "异常记录已闭环")</span>
+        case stderrors.Is(err, entity.ErrExceptionNoRefund):
+                <span class="cov8" title="1">return apperrors.InvalidArgument("exception_no_refund", "无主支付无对应订单，请选择联系渠道核实或标记忽略")</span>
+        case stderrors.Is(err, entity.ErrCallbackNotFound):
+                <span class="cov8" title="1">return apperrors.NotFound("callback_not_found", "该渠道交易号没有回调记录")</span>
+        case stderrors.Is(err, entity.ErrOrderClosed):
+                <span class="cov8" title="1">return apperrors.Conflict("order_closed", "订单已关闭（取消/超时），不能发货")</span>
+        case stderrors.Is(err, entity.ErrOrderRefunded):
+                <span class="cov8" title="1">return apperrors.Conflict("order_refunded", "订单已退款，不能发货")</span>
+        default:
+                <span class="cov8" title="1">return apperrors.Wrap(apperrors.KindInternal, "trade_service_error", "trade service error", err)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package model
+
+import "time"
+
+// OrderModel 是 orders 表的 Gorm 持久化模型。
+type OrderModel struct {
+        ID          string `gorm:"primaryKey;size:64"`
+        Name        string `gorm:"size:128;not null"`
+        Description string `gorm:"type:text"`
+        CreatedAt   time.Time
+        UpdatedAt   time.Time
+}
+
+func (OrderModel) TableName() string {
+        <span class="cov8" title="1">return "orders"
+</span>}
+
+const orderMongoCollectionName = "orders"
+
+// OrderDocument 是 orders 集合的 MongoDB 文档模型。
+type OrderDocument struct {
+        ID          string    `bson:"_id"`
+        Name        string    `bson:"name"`
+        Description string    `bson:"description"`
+        CreatedAt   time.Time `bson:"created_at"`
+        UpdatedAt   time.Time `bson:"updated_at"`
+}
+
+func (OrderDocument) MongoCollectionName() string {
+        <span class="cov8" title="1">return orderMongoCollectionName
+</span>}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package model
+
+import "time"
+
+// ProductModel 是 shop_products 表的持久化模型（运营维护售价与可售数量）。
+type ProductModel struct {
+        ID         string `gorm:"primaryKey;size:32"`
+        Name       string `gorm:"size:128;not null"`
+        PriceCents int64  `gorm:"not null"`
+        Total      int32  `gorm:"not null"`
+        Available  int32  `gorm:"not null"`
+        // 注意不可加 default:true：GORM 会在零值 false 时跳过该列改用数据库默认值，
+        // 导致新建下架商品被存成在售（真实缺陷，repo 直测发现）。
+        OnSale    bool `gorm:"not null"`
+        CreatedAt time.Time
+        UpdatedAt time.Time
+}
+
+// TableName 指定表名。
+func (ProductModel) TableName() string { <span class="cov8" title="1">return "shop_products" }</span>
+
+// TradeOrderModel 是 shop_trade_orders 表的持久化模型。
+// PriceCents 为下单时价格快照，后续调价不影响已有订单金额。
+type TradeOrderModel struct {
+        ID           string `gorm:"primaryKey;size:32"`
+        BuyerID      string `gorm:"size:64;index:idx_buyer_status,priority:1"`
+        BuyerName    string `gorm:"size:128"`
+        ProductID    string `gorm:"size:32;index"`
+        ProductName  string `gorm:"size:128"`
+        Qty          int32  `gorm:"not null"`
+        PriceCents   int64  `gorm:"not null"`
+        Status       string `gorm:"size:16;not null;index:idx_buyer_status,priority:2"`
+        Deadline     time.Time
+        PaidAt       *time.Time
+        ClosedReason string `gorm:"size:255"`
+        Carrier      string `gorm:"size:64"`
+        TrackingNo   string `gorm:"size:64"`
+        RejectReason string `gorm:"size:255"`
+        RefundFail   bool   `gorm:"not null;default:false"`
+        Origin       string `gorm:"size:16;not null;default:'sale'"`
+        CreatedAt    time.Time
+        UpdatedAt    time.Time
+}
+
+// TableName 指定表名。
+func (TradeOrderModel) TableName() string { <span class="cov8" title="1">return "shop_trade_orders" }</span>
+
+// TradeLedgerModel 是统一台账表：库存 / 收款 / 退款 / 发货 / 异常共用。
+type TradeLedgerModel struct {
+        ID          uint64 `gorm:"primaryKey;autoIncrement"`
+        OrderID     string `gorm:"size:32;index"`
+        Kind        string `gorm:"size:16;not null;index"`
+        Text        string `gorm:"size:512"`
+        AmountCents int64  `gorm:"not null;default:0"`
+        TradeNo     string `gorm:"size:64;index"`
+        Status      string `gorm:"size:32"`
+        CreatedAt   time.Time
+}
+
+// TableName 指定表名。
+func (TradeLedgerModel) TableName() string { <span class="cov8" title="1">return "shop_trade_ledgers" }</span>
+
+// PayCallbackModel 是渠道回调记录表：主键 channel_trade_no 即入口幂等键。
+type PayCallbackModel struct {
+        TradeNo     string `gorm:"primaryKey;size:64"`
+        OrderID     string `gorm:"size:32;index"`
+        AmountCents int64  `gorm:"not null"`
+        Status      string `gorm:"size:16;not null;index"`
+        Hits        int32  `gorm:"not null;default:1"`
+        CreatedAt   time.Time
+        UpdatedAt   time.Time
+}
+
+// TableName 指定表名。
+func (PayCallbackModel) TableName() string { <span class="cov8" title="1">return "shop_pay_callbacks" }</span>
+
+// ExceptionPayModel 是支付异常表：不允许只打日志，必须有可查记录并能闭环。
+type ExceptionPayModel struct {
+        ID                 string `gorm:"primaryKey;size:48"`
+        Type               string `gorm:"size:32;not null;index"`
+        OrderID            string `gorm:"size:32;index"`
+        TradeNo            string `gorm:"size:64;index"`
+        ChannelAmountCents int64  `gorm:"not null"`
+        SystemAmountCents  int64  `gorm:"not null"`
+        Status             string `gorm:"size:16;not null;index"`
+        Handler            string `gorm:"size:64"`
+        Result             string `gorm:"size:255"`
+        CreatedAt          time.Time
+        UpdatedAt          time.Time
+}
+
+// TableName 指定表名。
+func (ExceptionPayModel) TableName() string { <span class="cov8" title="1">return "shop_exception_pays" }</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package repo
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "go.uber.org/zap"
+        "gorm.io/gorm"
+
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+        dbmodel "github.com/BwCloudWeGo/bw-cli/internal/order/model"
+)
+
+// GormRepository 使用 Gorm 持久化 order 聚合。
+type GormRepository struct {
+        db  *gorm.DB
+        log *zap.Logger
+}
+
+// NewGormRepository 创建 order 仓储，并支持可选结构化日志。
+func NewGormRepository(db *gorm.DB, loggers ...*zap.Logger) *GormRepository {
+        <span class="cov8" title="1">log := zap.NewNop()
+        if len(loggers) &gt; 0 &amp;&amp; loggers[0] != nil </span>{
+                <span class="cov8" title="1">log = loggers[0]
+</span>        }
+        <span class="cov8" title="1">return &amp;GormRepository{db: db, log: log}</span>
+}
+
+// AutoMigrate 创建或更新 orders 表结构，并补充交易域五张表。
+func AutoMigrate(db *gorm.DB) error {
+        <span class="cov8" title="1">if err := db.AutoMigrate(&amp;dbmodel.OrderModel{}); err != nil </span>{
+                <span class="cov0" title="0">return err
+</span>        }
+        <span class="cov8" title="1">return updateTradeAutoMigrate(db)</span>
+}
+
+// Save 新增或更新 order 聚合。
+func (r *GormRepository) Save(ctx context.Context, item *entity.Order) error {
+        <span class="cov8" title="1">start := time.Now()
+        tx := r.db.WithContext(ctx).Save(toRecord(item))
+        r.logOperation("Save", tx.RowsAffected, start, tx.Error)
+        return tx.Error
+</span>}
+
+// FindByID 根据 ID 加载 order 聚合。
+func (r *GormRepository) FindByID(ctx context.Context, id string) (*entity.Order, error) {
+        <span class="cov8" title="1">start := time.Now()
+        var record dbmodel.OrderModel
+        tx := r.db.WithContext(ctx).Where("id = ?", id).First(&amp;record)
+        err := tx.Error
+        if errors.Is(err, gorm.ErrRecordNotFound) </span>{
+                <span class="cov8" title="1">err = entity.ErrOrderNotFound
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">r.logOperation("FindByID", tx.RowsAffected, start, err)
+                return nil, err
+</span>        }
+        <span class="cov8" title="1">r.logOperation("FindByID", tx.RowsAffected, start, nil)
+        return toDomain(&amp;record), nil</span>
+}
+
+// List 加载分页 order 聚合。
+func (r *GormRepository) List(ctx context.Context, offset int, limit int) ([]*entity.Order, int64, error) {
+        <span class="cov8" title="1">start := time.Now()
+        var total int64
+        countTx := r.db.WithContext(ctx).Model(&amp;dbmodel.OrderModel{}).Count(&amp;total)
+        if countTx.Error != nil </span>{
+                <span class="cov8" title="1">r.logOperation("Count", countTx.RowsAffected, start, countTx.Error)
+                return nil, 0, countTx.Error
+</span>        }
+        <span class="cov8" title="1">var records []dbmodel.OrderModel
+        tx := r.db.WithContext(ctx).
+                Order("created_at desc").
+                Offset(offset).
+                Limit(limit).
+                Find(&amp;records)
+        if tx.Error != nil </span>{
+                <span class="cov0" title="0">r.logOperation("List", tx.RowsAffected, start, tx.Error)
+                return nil, 0, tx.Error
+</span>        }
+        <span class="cov8" title="1">items := make([]*entity.Order, 0, len(records))
+        for i := range records </span>{
+                <span class="cov8" title="1">items = append(items, toDomain(&amp;records[i]))
+</span>        }
+        <span class="cov8" title="1">r.logOperation("List", tx.RowsAffected, start, nil)
+        return items, total, nil</span>
+}
+
+// Delete 根据 ID 删除 order 聚合。
+func (r *GormRepository) Delete(ctx context.Context, id string) error {
+        <span class="cov8" title="1">start := time.Now()
+        tx := r.db.WithContext(ctx).Where("id = ?", id).Delete(&amp;dbmodel.OrderModel{})
+        err := tx.Error
+        if err == nil &amp;&amp; tx.RowsAffected == 0 </span>{
+                <span class="cov8" title="1">err = entity.ErrOrderNotFound
+</span>        }
+        <span class="cov8" title="1">r.logOperation("Delete", tx.RowsAffected, start, err)
+        return err</span>
+}
+
+func (r *GormRepository) logOperation(operation string, rows int64, start time.Time, err error) {
+        <span class="cov8" title="1">fields := []zap.Field{
+                zap.String("repository", "order"),
+                zap.String("operation", operation),
+                zap.Int64("rows_affected", rows),
+                zap.Float64("latency_ms", float64(time.Since(start).Microseconds())/1000),
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">fields = append(fields, zap.Error(err))
+                r.log.Warn("repository operation completed with error", fields...)
+                return
+</span>        }
+        <span class="cov8" title="1">r.log.Info("repository operation completed", fields...)</span>
+}
+
+func toRecord(item *entity.Order) *dbmodel.OrderModel {
+        <span class="cov8" title="1">return &amp;dbmodel.OrderModel{
+                ID:          item.ID,
+                Name:        item.Name,
+                Description: item.Description,
+                CreatedAt:   item.CreatedAt,
+                UpdatedAt:   item.UpdatedAt,
+</span>        }
+}
+
+func toDomain(record *dbmodel.OrderModel) *entity.Order {
+        <span class="cov8" title="1">return &amp;entity.Order{
+                ID:          record.ID,
+                Name:        record.Name,
+                Description: record.Description,
+                CreatedAt:   record.CreatedAt,
+                UpdatedAt:   record.UpdatedAt,
+</span>        }
+}
+
+var _ entity.Repository = (*GormRepository)(nil)
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package repo
+
+import (
+        "context"
+        "errors"
+        "time"
+
+        "go.mongodb.org/mongo-driver/v2/bson"
+        "go.mongodb.org/mongo-driver/v2/mongo"
+        "go.mongodb.org/mongo-driver/v2/mongo/options"
+        "go.uber.org/zap"
+
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+        dbmodel "github.com/BwCloudWeGo/bw-cli/internal/order/model"
+        "github.com/BwCloudWeGo/bw-cli/pkg/mongox"
+)
+
+// MongoRepository 使用共享 mongox 文档存储持久化 order 聚合。
+// 它实现 entity.Repository，可在不修改 service 代码的情况下替换 GormRepository。
+type MongoRepository struct {
+        documents *mongox.DocumentStore[dbmodel.OrderDocument]
+        log       *zap.Logger
+}
+
+// NewMongoRepository 使用配置好的数据库创建 MongoDB 仓储。
+func NewMongoRepository(db *mongo.Database, loggers ...*zap.Logger) *MongoRepository {
+        <span class="cov8" title="1">log := zap.NewNop()
+        if len(loggers) &gt; 0 &amp;&amp; loggers[0] != nil </span>{
+                <span class="cov8" title="1">log = loggers[0]
+</span>        }
+        <span class="cov8" title="1">return &amp;MongoRepository{
+                documents: mongox.NewDocumentStore[dbmodel.OrderDocument](db, log),
+                log:       log,
+</span>        }
+}
+
+// Save 按 MongoDB _id 新增或更新 order 聚合。
+func (r *MongoRepository) Save(ctx context.Context, item *entity.Order) error {
+        <span class="cov8" title="1">start := time.Now()
+        _, err := r.documents.UpsertByID(ctx, item.ID, toDocument(item))
+        r.logOperation("Save", item.ID, 0, start, err)
+        return err
+</span>}
+
+// FindByID 按 MongoDB _id 加载 order 聚合。
+func (r *MongoRepository) FindByID(ctx context.Context, id string) (*entity.Order, error) {
+        <span class="cov8" title="1">start := time.Now()
+        document, err := r.documents.FindByID(ctx, id)
+        if errors.Is(err, mongox.ErrNotFound) </span>{
+                <span class="cov8" title="1">err = entity.ErrOrderNotFound
+</span>        }
+        <span class="cov8" title="1">r.logOperation("FindByID", id, 0, start, err)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return toDomainFromDocument(document), nil</span>
+}
+
+// List 按创建时间排序加载分页 order 聚合。
+func (r *MongoRepository) List(ctx context.Context, offset int, limit int) ([]*entity.Order, int64, error) {
+        <span class="cov8" title="1">start := time.Now()
+        filter := bson.M{}
+        total, err := r.documents.Count(ctx, filter)
+        if err != nil </span>{
+                <span class="cov0" title="0">r.logOperation("Count", "", 0, start, err)
+                return nil, 0, err
+</span>        }
+
+        <span class="cov8" title="1">documents, err := r.documents.FindMany(ctx, filter,
+                options.Find().
+                        SetSort(bson.D{{Key: "created_at", Value: -1}}).
+                        SetSkip(int64(offset)).
+                        SetLimit(int64(limit)),
+        )
+        if err != nil </span>{
+                <span class="cov0" title="0">r.logOperation("List", "", total, start, err)
+                return nil, 0, err
+</span>        }
+
+        <span class="cov8" title="1">items := make([]*entity.Order, 0, len(documents))
+        for i := range documents </span>{
+                <span class="cov8" title="1">items = append(items, toDomainFromDocument(&amp;documents[i]))
+</span>        }
+        <span class="cov8" title="1">r.logOperation("List", "", total, start, nil)
+        return items, total, nil</span>
+}
+
+// Delete 按 MongoDB _id 删除 order 聚合。
+func (r *MongoRepository) Delete(ctx context.Context, id string) error {
+        <span class="cov8" title="1">start := time.Now()
+        result, err := r.documents.DeleteByID(ctx, id)
+        if err == nil &amp;&amp; result != nil &amp;&amp; result.DeletedCount == 0 </span>{
+                <span class="cov8" title="1">err = entity.ErrOrderNotFound
+</span>        }
+        <span class="cov8" title="1">r.logOperation("Delete", id, 0, start, err)
+        return err</span>
+}
+
+func (r *MongoRepository) logOperation(operation string, id string, total int64, start time.Time, err error) {
+        <span class="cov8" title="1">fields := []zap.Field{
+                zap.String("repository", "order_mongo"),
+                zap.String("operation", operation),
+                zap.String("aggregate_id", id),
+                zap.Int64("total", total),
+                zap.Float64("latency_ms", float64(time.Since(start).Microseconds())/1000),
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">fields = append(fields, zap.Error(err))
+                r.log.Warn("mongodb repository operation completed with error", fields...)
+                return
+</span>        }
+        <span class="cov8" title="1">r.log.Info("mongodb repository operation completed", fields...)</span>
+}
+
+func toDocument(item *entity.Order) *dbmodel.OrderDocument {
+        <span class="cov8" title="1">return &amp;dbmodel.OrderDocument{
+                ID:          item.ID,
+                Name:        item.Name,
+                Description: item.Description,
+                CreatedAt:   item.CreatedAt,
+                UpdatedAt:   item.UpdatedAt,
+</span>        }
+}
+
+func toDomainFromDocument(document *dbmodel.OrderDocument) *entity.Order {
+        <span class="cov8" title="1">return &amp;entity.Order{
+                ID:          document.ID,
+                Name:        document.Name,
+                Description: document.Description,
+                CreatedAt:   document.CreatedAt,
+                UpdatedAt:   document.UpdatedAt,
+</span>        }
+}
+
+var _ entity.Repository = (*MongoRepository)(nil)
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package repo
+
+import (
+        "context"
+        "errors"
+        "strings"
+        "time"
+
+        "gorm.io/gorm"
+        "gorm.io/gorm/clause"
+
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+        dbmodel "github.com/BwCloudWeGo/bw-cli/internal/order/model"
+)
+
+// UpdateAutoMigrate 扩展迁移：新增交易域五张表。
+// 由 AutoMigrate 内部调用，保持 order 服务只需一个迁移入口。
+func updateTradeAutoMigrate(db *gorm.DB) error {
+        <span class="cov8" title="1">return db.AutoMigrate(
+                &amp;dbmodel.ProductModel{},
+                &amp;dbmodel.TradeOrderModel{},
+                &amp;dbmodel.TradeLedgerModel{},
+                &amp;dbmodel.PayCallbackModel{},
+                &amp;dbmodel.ExceptionPayModel{},
+        )
+</span>}
+
+var _ entity.TradeRepository = (*GormRepository)(nil)
+
+// ListProducts 返回全部商品（含下架）。
+func (r *GormRepository) ListProducts(ctx context.Context) ([]*entity.Product, error) {
+        <span class="cov8" title="1">var records []dbmodel.ProductModel
+        if err := r.db.WithContext(ctx).Order("id asc").Find(&amp;records).Error; err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">items := make([]*entity.Product, 0, len(records))
+        for i := range records </span>{
+                <span class="cov8" title="1">items = append(items, toProductDomain(&amp;records[i]))
+</span>        }
+        <span class="cov8" title="1">return items, nil</span>
+}
+
+// FindProduct 按 ID 查询商品。
+func (r *GormRepository) FindProduct(ctx context.Context, id string) (*entity.Product, error) {
+        <span class="cov8" title="1">var record dbmodel.ProductModel
+        err := r.db.WithContext(ctx).Where("id = ?", id).First(&amp;record).Error
+        if errors.Is(err, gorm.ErrRecordNotFound) </span>{
+                <span class="cov8" title="1">return nil, entity.ErrProductNotFound
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return toProductDomain(&amp;record), nil</span>
+}
+
+// SaveProduct 新增或更新商品；显式维护时间字段，避免零值时间写入严格模式 MySQL。
+func (r *GormRepository) SaveProduct(ctx context.Context, product *entity.Product) error {
+        <span class="cov8" title="1">now := time.Now()
+        updates := map[string]any{
+                "name":        product.Name,
+                "price_cents": product.PriceCents,
+                "available":   product.Available,
+                "on_sale":     product.OnSale,
+                "total":       product.Total,
+                "updated_at":  now,
+</span>        }
+        <span class="cov8" title="1">res := r.db.WithContext(ctx).Model(&amp;dbmodel.ProductModel{}).
+                Where("id = ?", product.ID).Updates(updates)
+        if res.Error != nil </span>{
+                <span class="cov8" title="1">return res.Error
+</span>        }
+        <span class="cov8" title="1">if res.RowsAffected &gt; 0 </span>{
+                <span class="cov8" title="1">return nil
+</span>        }
+        <span class="cov8" title="1">return r.db.WithContext(ctx).Create(&amp;dbmodel.ProductModel{
+                ID:         product.ID,
+                Name:       product.Name,
+                PriceCents: product.PriceCents,
+                Total:      product.Total,
+                Available:  product.Available,
+                OnSale:     product.OnSale,
+                CreatedAt:  now,
+                UpdatedAt:  now,
+        }).Error</span>
+}
+
+// HasAnyProduct 判断商品表是否为空（用于首次启动播种）。
+func (r *GormRepository) HasAnyProduct(ctx context.Context) (bool, error) {
+        <span class="cov8" title="1">var count int64
+        if err := r.db.WithContext(ctx).Model(&amp;dbmodel.ProductModel{}).Count(&amp;count).Error; err != nil </span>{
+                <span class="cov8" title="1">return false, err
+</span>        }
+        <span class="cov8" title="1">return count &gt; 0, nil</span>
+}
+
+// PlaceOrderTx 在同一事务内完成：校验商品 → 条件扣减可售数量 → 创建订单 → 写库存预占流水。
+// 条件扣减失败（可售不足）直接返回 ErrInsufficientStock，不产生订单，保证并发下不超卖。
+func (r *GormRepository) PlaceOrderTx(ctx context.Context, buyerID string, buyerName string, productID string, qty int32, keep time.Duration) (*entity.TradeOrder, error) {
+        <span class="cov8" title="1">var order *entity.TradeOrder
+        err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error </span>{
+                <span class="cov8" title="1">var product dbmodel.ProductModel
+                if err := tx.Where("id = ?", productID).First(&amp;product).Error; err != nil </span>{
+                        <span class="cov8" title="1">if errors.Is(err, gorm.ErrRecordNotFound) </span>{
+                                <span class="cov8" title="1">return entity.ErrProductNotFound
+</span>                        }
+                        <span class="cov0" title="0">return err</span>
+                }
+                <span class="cov8" title="1">if qty &lt; 1 || qty &gt; 2 </span>{
+                        <span class="cov8" title="1">return entity.ErrInvalidQty
+</span>                }
+                <span class="cov8" title="1">if !product.OnSale </span>{
+                        <span class="cov8" title="1">return entity.ErrProductOffSale
+</span>                }
+                <span class="cov8" title="1">now := time.Now()
+                res := tx.Model(&amp;dbmodel.ProductModel{}).
+                        Where("id = ? AND available &gt;= ?", productID, qty).
+                        Updates(map[string]any{"available": gorm.Expr("available - ?", qty), "updated_at": now})
+                if res.Error != nil </span>{
+                        <span class="cov0" title="0">return res.Error
+</span>                }
+                <span class="cov8" title="1">if res.RowsAffected == 0 </span>{
+                        <span class="cov8" title="1">return entity.ErrInsufficientStock
+</span>                }
+                <span class="cov8" title="1">order = &amp;entity.TradeOrder{
+                        ID:          entity.NewTradeOrderID(),
+                        BuyerID:     buyerID,
+                        BuyerName:   buyerName,
+                        ProductID:   productID,
+                        ProductName: product.Name,
+                        Qty:         qty,
+                        PriceCents:  product.PriceCents,
+                        Status:      entity.OrderStatusCreated,
+                        CreatedAt:   now,
+                        Deadline:    now.Add(keep),
+                        Origin:      entity.OrderOriginSale,
+                        UpdatedAt:   now,
+</span>                }
+                <span class="cov8" title="1">if err := tx.Create(toTradeOrderModel(order)).Error; err != nil </span>{
+                        <span class="cov0" title="0">return err
+</span>                }
+                <span class="cov8" title="1">return tx.Create(&amp;dbmodel.TradeLedgerModel{
+                        OrderID:   order.ID,
+                        Kind:      entity.LedgerStock,
+                        Text:      "下单预占库存 " + itoa(qty) + " 件",
+                        Status:    entity.OrderStatusCreated,
+                        CreatedAt: now,
+                }).Error</span>
+        })
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return order, nil</span>
+}
+
+// FindTradeOrder 按 ID 查询订单。
+func (r *GormRepository) FindTradeOrder(ctx context.Context, id string) (*entity.TradeOrder, error) {
+        <span class="cov8" title="1">var record dbmodel.TradeOrderModel
+        err := r.db.WithContext(ctx).Where("id = ?", id).First(&amp;record).Error
+        if errors.Is(err, gorm.ErrRecordNotFound) </span>{
+                <span class="cov8" title="1">return nil, entity.ErrTradeOrderNotFound
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return toTradeOrderDomain(&amp;record), nil</span>
+}
+
+// ListTradeOrders 按买家与状态过滤订单（status/buyerID 为空表示不过滤）。
+func (r *GormRepository) ListTradeOrders(ctx context.Context, buyerID string, status string) ([]*entity.TradeOrder, int64, error) {
+        <span class="cov8" title="1">query := r.db.WithContext(ctx).Model(&amp;dbmodel.TradeOrderModel{})
+        if buyerID != "" </span>{
+                <span class="cov8" title="1">query = query.Where("buyer_id = ?", buyerID)
+</span>        }
+        <span class="cov8" title="1">if status != "" </span>{
+                <span class="cov8" title="1">query = query.Where("status = ?", status)
+</span>        }
+        <span class="cov8" title="1">var total int64
+        if err := query.Count(&amp;total).Error; err != nil </span>{
+                <span class="cov8" title="1">return nil, 0, err
+</span>        }
+        <span class="cov8" title="1">var records []dbmodel.TradeOrderModel
+        if err := query.Order("created_at desc").Find(&amp;records).Error; err != nil </span>{
+                <span class="cov0" title="0">return nil, 0, err
+</span>        }
+        <span class="cov8" title="1">items := make([]*entity.TradeOrder, 0, len(records))
+        for i := range records </span>{
+                <span class="cov8" title="1">items = append(items, toTradeOrderDomain(&amp;records[i]))
+</span>        }
+        <span class="cov8" title="1">return items, total, nil</span>
+}
+
+// TransitionOrder 条件更新实现唯一状态迁移入口：
+// UPDATE ... SET status=to WHERE id=? AND status=from；rows=0 即迁移失败（幂等拒绝）。
+// stockDelta&gt;0 时在同一事务内回补可售数量，mutate 返回的台账条目同样随事务写入。
+func (r *GormRepository) TransitionOrder(ctx context.Context, orderID string, from string, to string, stockDelta int32, mutate func(order *entity.TradeOrder) ([]entity.Ledger, error)) (bool, error) {
+        <span class="cov8" title="1">applied := false
+        err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error </span>{
+                <span class="cov8" title="1">now := time.Now()
+                res := tx.Model(&amp;dbmodel.TradeOrderModel{}).
+                        Where("id = ? AND status = ?", orderID, from).
+                        Updates(map[string]any{"status": to, "updated_at": now})
+                if res.Error != nil </span>{
+                        <span class="cov0" title="0">return res.Error
+</span>                }
+                <span class="cov8" title="1">if res.RowsAffected == 0 </span>{
+                        <span class="cov8" title="1">return nil // 条件不满足：已被并发处理或状态不符
+</span>                }
+                <span class="cov8" title="1">var record dbmodel.TradeOrderModel
+                if err := tx.Where("id = ?", orderID).First(&amp;record).Error; err != nil </span>{
+                        <span class="cov0" title="0">return err
+</span>                }
+                <span class="cov8" title="1">order := toTradeOrderDomain(&amp;record)
+                order.Status = to
+                order.UpdatedAt = now
+                var ledgers []entity.Ledger
+                if mutate != nil </span>{
+                        <span class="cov8" title="1">var err error
+                        ledgers, err = mutate(order)
+                        if err != nil </span>{
+                                <span class="cov8" title="1">return err
+</span>                        }
+                }
+                <span class="cov8" title="1">updates := map[string]any{
+                        "status":        to,
+                        "paid_at":       nullableTime(order.PaidAt),
+                        "closed_reason": order.ClosedReason,
+                        "carrier":       order.Carrier,
+                        "tracking_no":   order.TrackingNo,
+                        "reject_reason": order.RejectReason,
+                        "refund_fail":   order.RefundFail,
+                        "origin":        order.Origin,
+                        "updated_at":    now,
+</span>                }
+                <span class="cov8" title="1">if err := tx.Model(&amp;dbmodel.TradeOrderModel{}).Where("id = ?", orderID).Updates(updates).Error; err != nil </span>{
+                        <span class="cov0" title="0">return err
+</span>                }
+                <span class="cov8" title="1">if stockDelta &gt; 0 </span>{
+                        <span class="cov8" title="1">if err := tx.Model(&amp;dbmodel.ProductModel{}).
+                                Where("id = ?", order.ProductID).
+                                Updates(map[string]any{
+                                        "available":  gorm.Expr("available + ?", stockDelta),
+                                        "updated_at": now,
+                                }).Error; err != nil </span>{
+                                <span class="cov0" title="0">return err
+</span>                        }
+                }
+                <span class="cov8" title="1">for i := range ledgers </span>{
+                        <span class="cov8" title="1">entry := ledgers[i]
+                        if entry.Time.IsZero() </span>{
+                                <span class="cov8" title="1">entry.Time = now
+</span>                        }
+                        <span class="cov8" title="1">if entry.OrderID == "" </span>{
+                                <span class="cov8" title="1">entry.OrderID = orderID
+</span>                        }
+                        <span class="cov8" title="1">if err := tx.Create(&amp;dbmodel.TradeLedgerModel{
+                                OrderID:     entry.OrderID,
+                                Kind:        entry.Kind,
+                                Text:        entry.Text,
+                                AmountCents: entry.AmountCents,
+                                TradeNo:     entry.TradeNo,
+                                Status:      entry.Status,
+                                CreatedAt:   entry.Time,
+                        }).Error; err != nil </span>{
+                                <span class="cov0" title="0">return err
+</span>                        }
+                }
+                <span class="cov8" title="1">applied = true
+                return nil</span>
+        })
+        <span class="cov8" title="1">return applied, err</span>
+}
+
+// ListExpiredCreated 返回已超保留期的待支付订单（服务端时间判定）。
+func (r *GormRepository) ListExpiredCreated(ctx context.Context, now time.Time) ([]*entity.TradeOrder, error) {
+        <span class="cov8" title="1">var records []dbmodel.TradeOrderModel
+        err := r.db.WithContext(ctx).
+                Where("status = ? AND deadline &lt;= ?", entity.OrderStatusCreated, now).
+                Order("created_at asc").Limit(200).Find(&amp;records).Error
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">items := make([]*entity.TradeOrder, 0, len(records))
+        for i := range records </span>{
+                <span class="cov8" title="1">items = append(items, toTradeOrderDomain(&amp;records[i]))
+</span>        }
+        <span class="cov8" title="1">return items, nil</span>
+}
+
+// FindCallback 按渠道交易号查询回调记录。
+func (r *GormRepository) FindCallback(ctx context.Context, tradeNo string) (*entity.PayCallback, error) {
+        <span class="cov8" title="1">var record dbmodel.PayCallbackModel
+        err := r.db.WithContext(ctx).Where("trade_no = ?", tradeNo).First(&amp;record).Error
+        if errors.Is(err, gorm.ErrRecordNotFound) </span>{
+                <span class="cov8" title="1">return nil, nil
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return &amp;entity.PayCallback{
+                TradeNo:     record.TradeNo,
+                OrderID:     record.OrderID,
+                AmountCents: record.AmountCents,
+                Status:      record.Status,
+                Hits:        record.Hits,
+                CreatedAt:   record.CreatedAt,
+                UpdatedAt:   record.UpdatedAt,
+        }, nil</span>
+}
+
+// SaveCallback 写入回调记录；主键冲突（重复通知）返回 ErrDuplicateTradeNo。
+func (r *GormRepository) SaveCallback(ctx context.Context, cb *entity.PayCallback) error {
+        <span class="cov8" title="1">record := &amp;dbmodel.PayCallbackModel{
+                TradeNo:     cb.TradeNo,
+                OrderID:     cb.OrderID,
+                AmountCents: cb.AmountCents,
+                Status:      cb.Status,
+                Hits:        1,
+</span>        }
+        <span class="cov8" title="1">res := r.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(record)
+        if res.Error != nil </span>{
+                <span class="cov8" title="1">return res.Error
+</span>        }
+        <span class="cov8" title="1">if res.RowsAffected == 0 </span>{
+                <span class="cov8" title="1">return entity.ErrDuplicateTradeNo
+</span>        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+// UpdateCallbackStatus 更新回调处理状态。
+func (r *GormRepository) UpdateCallbackStatus(ctx context.Context, tradeNo string, status string) error {
+        <span class="cov8" title="1">updates := map[string]any{"status": status, "updated_at": time.Now()}
+        if status == entity.CallbackReceived </span>{
+                <span class="cov0" title="0">updates["hits"] = gorm.Expr("hits + 1")
+</span>        }
+        <span class="cov8" title="1">return r.db.WithContext(ctx).Model(&amp;dbmodel.PayCallbackModel{}).
+                Where("trade_no = ?", tradeNo).Updates(updates).Error</span>
+}
+
+// IncrementCallbackHits 仅累加重复命中次数，不改变处理状态
+// （避免重复通知把已完成记录 DONE 降级回 RECEIVED，导致反查结果失真）。
+func (r *GormRepository) IncrementCallbackHits(ctx context.Context, tradeNo string) error {
+        <span class="cov8" title="1">return r.db.WithContext(ctx).Model(&amp;dbmodel.PayCallbackModel{}).
+                Where("trade_no = ?", tradeNo).
+                Updates(map[string]any{"hits": gorm.Expr("hits + 1"), "updated_at": time.Now()}).Error
+</span>}
+
+// ListCallbacks 按关键词（渠道交易号/订单号模糊匹配）与处理状态查询回调记录。
+func (r *GormRepository) ListCallbacks(ctx context.Context, keyword string, status string) ([]*entity.PayCallback, error) {
+        <span class="cov8" title="1">query := r.db.WithContext(ctx).Model(&amp;dbmodel.PayCallbackModel{})
+        if keyword = strings.TrimSpace(keyword); keyword != "" </span>{
+                <span class="cov8" title="1">like := "%" + keyword + "%"
+                query = query.Where("trade_no LIKE ? OR order_id LIKE ?", like, like)
+</span>        }
+        <span class="cov8" title="1">if status = strings.TrimSpace(status); status != "" </span>{
+                <span class="cov8" title="1">query = query.Where("status = ?", status)
+</span>        }
+        <span class="cov8" title="1">var records []dbmodel.PayCallbackModel
+        if err := query.Order("created_at desc").Limit(200).Find(&amp;records).Error; err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">items := make([]*entity.PayCallback, 0, len(records))
+        for i := range records </span>{
+                <span class="cov8" title="1">items = append(items, &amp;entity.PayCallback{
+                        TradeNo:     records[i].TradeNo,
+                        OrderID:     records[i].OrderID,
+                        AmountCents: records[i].AmountCents,
+                        Status:      records[i].Status,
+                        Hits:        records[i].Hits,
+                        CreatedAt:   records[i].CreatedAt,
+                        UpdatedAt:   records[i].UpdatedAt,
+                })
+</span>        }
+        <span class="cov8" title="1">return items, nil</span>
+}
+
+// SaveException 写入支付异常记录。
+func (r *GormRepository) SaveException(ctx context.Context, ex *entity.ExceptionPay) error {
+        <span class="cov8" title="1">now := time.Now()
+        if ex.CreatedAt.IsZero() </span>{
+                <span class="cov8" title="1">ex.CreatedAt = now
+</span>        }
+        <span class="cov8" title="1">return r.db.WithContext(ctx).Create(&amp;dbmodel.ExceptionPayModel{
+                ID:                 ex.ID,
+                Type:               ex.Type,
+                OrderID:            ex.OrderID,
+                TradeNo:            ex.TradeNo,
+                ChannelAmountCents: ex.ChannelAmountCents,
+                SystemAmountCents:  ex.SystemAmountCents,
+                Status:             ex.Status,
+                Handler:            ex.Handler,
+                Result:             ex.Result,
+                CreatedAt:          ex.CreatedAt,
+                UpdatedAt:          now,
+        }).Error</span>
+}
+
+// FindException 按 ID 查询异常记录。
+func (r *GormRepository) FindException(ctx context.Context, id string) (*entity.ExceptionPay, error) {
+        <span class="cov8" title="1">var record dbmodel.ExceptionPayModel
+        err := r.db.WithContext(ctx).Where("id = ?", id).First(&amp;record).Error
+        if errors.Is(err, gorm.ErrRecordNotFound) </span>{
+                <span class="cov8" title="1">return nil, entity.ErrExceptionNotFound
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return toExceptionDomain(&amp;record), nil</span>
+}
+
+// ListExceptions 列出异常记录，onlyPending 为真时仅返回待处理。
+func (r *GormRepository) ListExceptions(ctx context.Context, onlyPending bool) ([]*entity.ExceptionPay, error) {
+        <span class="cov8" title="1">query := r.db.WithContext(ctx).Model(&amp;dbmodel.ExceptionPayModel{})
+        if onlyPending </span>{
+                <span class="cov8" title="1">query = query.Where("status = ?", entity.ExcStatusPending)
+</span>        }
+        <span class="cov8" title="1">var records []dbmodel.ExceptionPayModel
+        if err := query.Order("created_at desc").Find(&amp;records).Error; err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">items := make([]*entity.ExceptionPay, 0, len(records))
+        for i := range records </span>{
+                <span class="cov8" title="1">items = append(items, toExceptionDomain(&amp;records[i]))
+</span>        }
+        <span class="cov8" title="1">return items, nil</span>
+}
+
+// FindExceptionByTradeNo 用渠道交易号反查异常记录；不存在返回 (nil, nil)。
+func (r *GormRepository) FindExceptionByTradeNo(ctx context.Context, tradeNo string) (*entity.ExceptionPay, error) {
+        <span class="cov8" title="1">var record dbmodel.ExceptionPayModel
+        err := r.db.WithContext(ctx).Where("trade_no = ?", tradeNo).
+                Order("created_at desc").First(&amp;record).Error
+        if errors.Is(err, gorm.ErrRecordNotFound) </span>{
+                <span class="cov8" title="1">return nil, nil
+</span>        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return toExceptionDomain(&amp;record), nil</span>
+}
+
+// CloseException 闭环异常记录（条件更新：仅待处理可闭环）。
+func (r *GormRepository) CloseException(ctx context.Context, id string, handler string, result string) error {
+        <span class="cov8" title="1">res := r.db.WithContext(ctx).Model(&amp;dbmodel.ExceptionPayModel{}).
+                Where("id = ? AND status = ?", id, entity.ExcStatusPending).
+                Updates(map[string]any{
+                        "status":     entity.ExcStatusClosed,
+                        "handler":    handler,
+                        "result":     result,
+                        "updated_at": time.Now(),
+                })
+        if res.Error != nil </span>{
+                <span class="cov8" title="1">return res.Error
+</span>        }
+        <span class="cov8" title="1">if res.RowsAffected == 0 </span>{
+                <span class="cov8" title="1">return entity.ErrExceptionClosed
+</span>        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+// MarkRefundFailed 记录渠道退款明确失败：订单保持 REFUNDING，写失败流水并置失败标记。
+// 使用条件更新，仅当订单仍在退款审核中才生效。
+func (r *GormRepository) MarkRefundFailed(ctx context.Context, orderID string) (bool, error) {
+        <span class="cov8" title="1">applied := false
+        err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error </span>{
+                <span class="cov8" title="1">now := time.Now()
+                res := tx.Model(&amp;dbmodel.TradeOrderModel{}).
+                        Where("id = ? AND status = ?", orderID, entity.OrderStatusRefunding).
+                        Updates(map[string]any{"refund_fail": true, "updated_at": now})
+                if res.Error != nil </span>{
+                        <span class="cov0" title="0">return res.Error
+</span>                }
+                <span class="cov8" title="1">if res.RowsAffected == 0 </span>{
+                        <span class="cov8" title="1">return nil
+</span>                }
+                <span class="cov8" title="1">if err := tx.Create(&amp;dbmodel.TradeLedgerModel{
+                        OrderID:   orderID,
+                        Kind:      entity.LedgerRefund,
+                        Text:      "渠道退款失败（明确失败），保留待处理，客服可重试",
+                        Status:    "failed",
+                        CreatedAt: now,
+                }).Error; err != nil </span>{
+                        <span class="cov0" title="0">return err
+</span>                }
+                <span class="cov8" title="1">applied = true
+                return nil</span>
+        })
+        <span class="cov8" title="1">return applied, err</span>
+}
+
+// AppendLedger 仅追加一条台账记录（不改变订单状态、不调整库存）。
+func (r *GormRepository) AppendLedger(ctx context.Context, ledger *entity.Ledger) error {
+        <span class="cov8" title="1">if ledger.Time.IsZero() </span>{
+                <span class="cov8" title="1">ledger.Time = time.Now()
+</span>        }
+        <span class="cov8" title="1">return r.db.WithContext(ctx).Create(&amp;dbmodel.TradeLedgerModel{
+                OrderID:     ledger.OrderID,
+                Kind:        ledger.Kind,
+                Text:        ledger.Text,
+                AmountCents: ledger.AmountCents,
+                TradeNo:     ledger.TradeNo,
+                Status:      ledger.Status,
+                CreatedAt:   ledger.Time,
+        }).Error</span>
+}
+
+// ListLedgers 返回订单的全部台账记录（时间正序）。
+func (r *GormRepository) ListLedgers(ctx context.Context, orderID string) ([]entity.Ledger, error) {
+        <span class="cov8" title="1">var records []dbmodel.TradeLedgerModel
+        if err := r.db.WithContext(ctx).Where("order_id = ?", orderID).
+                Order("created_at asc, id asc").Find(&amp;records).Error; err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">items := make([]entity.Ledger, 0, len(records))
+        for i := range records </span>{
+                <span class="cov8" title="1">items = append(items, entity.Ledger{
+                        Kind:        records[i].Kind,
+                        OrderID:     records[i].OrderID,
+                        Text:        records[i].Text,
+                        AmountCents: records[i].AmountCents,
+                        TradeNo:     records[i].TradeNo,
+                        Status:      records[i].Status,
+                        Time:        records[i].CreatedAt,
+                })
+</span>        }
+        <span class="cov8" title="1">return items, nil</span>
+}
+
+// TradeSummary 汇总已收款、已退款、可售总量、异常待处理与各状态订单数。
+func (r *GormRepository) TradeSummary(ctx context.Context) (*entity.Summary, error) {
+        <span class="cov8" title="1">summary := &amp;entity.Summary{OrdersByStatus: map[string]int32{}}
+        var paid, refunded int64
+        if err := r.db.WithContext(ctx).Model(&amp;dbmodel.TradeLedgerModel{}).
+                Where("kind = ?", entity.LedgerPay).
+                Select("COALESCE(SUM(amount_cents),0)").Scan(&amp;paid).Error; err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if err := r.db.WithContext(ctx).Model(&amp;dbmodel.TradeLedgerModel{}).
+                Where("kind = ? AND status = ?", entity.LedgerRefund, "success").
+                Select("COALESCE(SUM(amount_cents),0)").Scan(&amp;refunded).Error; err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">summary.PaidTotalCents = paid
+        summary.RefundedTotalCents = refunded
+</span>
+        <span class="cov8" title="1">var available int64
+        if err := r.db.WithContext(ctx).Model(&amp;dbmodel.ProductModel{}).
+                Select("COALESCE(SUM(available),0)").Scan(&amp;available).Error; err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">summary.AvailableTotal = int32(available)
+</span>
+        <span class="cov8" title="1">var reserved int64
+        if err := r.db.WithContext(ctx).Model(&amp;dbmodel.TradeOrderModel{}).
+                Where("status = ?", entity.OrderStatusCreated).
+                Select("COALESCE(SUM(qty),0)").Scan(&amp;reserved).Error; err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">summary.ReservedTotal = int32(reserved)
+</span>
+        <span class="cov8" title="1">var pending int64
+        if err := r.db.WithContext(ctx).Model(&amp;dbmodel.ExceptionPayModel{}).
+                Where("status = ?", entity.ExcStatusPending).Count(&amp;pending).Error; err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">summary.ExceptionPending = int32(pending)
+</span>
+        <span class="cov8" title="1">type statusRow struct {
+                K string `gorm:"column:k"`
+                N int32  `gorm:"column:n"`
+</span>        }
+        <span class="cov8" title="1">var rows []statusRow
+        if err := r.db.WithContext(ctx).Model(&amp;dbmodel.TradeOrderModel{}).
+                Select("status as k, count(*) as n").Group("status").Scan(&amp;rows).Error; err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">for _, row := range rows </span>{
+                <span class="cov8" title="1">summary.OrdersByStatus[row.K] = row.N
+</span>        }
+        <span class="cov8" title="1">return summary, nil</span>
+}
+
+func toProductDomain(record *dbmodel.ProductModel) *entity.Product {
+        <span class="cov8" title="1">return &amp;entity.Product{
+                ID:         record.ID,
+                Name:       record.Name,
+                PriceCents: record.PriceCents,
+                Total:      record.Total,
+                Available:  record.Available,
+                OnSale:     record.OnSale,
+</span>        }
+}
+
+func toTradeOrderModel(order *entity.TradeOrder) *dbmodel.TradeOrderModel {
+        <span class="cov8" title="1">return &amp;dbmodel.TradeOrderModel{
+                ID:           order.ID,
+                BuyerID:      order.BuyerID,
+                BuyerName:    order.BuyerName,
+                ProductID:    order.ProductID,
+                ProductName:  order.ProductName,
+                Qty:          order.Qty,
+                PriceCents:   order.PriceCents,
+                Status:       order.Status,
+                Deadline:     order.Deadline,
+                PaidAt:       nullableTime(order.PaidAt),
+                ClosedReason: order.ClosedReason,
+                Carrier:      order.Carrier,
+                TrackingNo:   order.TrackingNo,
+                RejectReason: order.RejectReason,
+                RefundFail:   order.RefundFail,
+                Origin:       order.Origin,
+                CreatedAt:    order.CreatedAt,
+                UpdatedAt:    order.UpdatedAt,
+</span>        }
+}
+
+func toTradeOrderDomain(record *dbmodel.TradeOrderModel) *entity.TradeOrder {
+        <span class="cov8" title="1">order := &amp;entity.TradeOrder{
+                ID:           record.ID,
+                BuyerID:      record.BuyerID,
+                BuyerName:    record.BuyerName,
+                ProductID:    record.ProductID,
+                ProductName:  record.ProductName,
+                Qty:          record.Qty,
+                PriceCents:   record.PriceCents,
+                Status:       record.Status,
+                CreatedAt:    record.CreatedAt,
+                Deadline:     record.Deadline,
+                ClosedReason: record.ClosedReason,
+                Carrier:      record.Carrier,
+                TrackingNo:   record.TrackingNo,
+                RejectReason: record.RejectReason,
+                RefundFail:   record.RefundFail,
+                Origin:       record.Origin,
+                UpdatedAt:    record.UpdatedAt,
+</span>        }
+        <span class="cov8" title="1">if record.PaidAt != nil </span>{
+                <span class="cov8" title="1">order.PaidAt = *record.PaidAt
+</span>        }
+        <span class="cov8" title="1">return order</span>
+}
+
+func toExceptionDomain(record *dbmodel.ExceptionPayModel) *entity.ExceptionPay {
+        <span class="cov8" title="1">return &amp;entity.ExceptionPay{
+                ID:                 record.ID,
+                Type:               record.Type,
+                OrderID:            record.OrderID,
+                TradeNo:            record.TradeNo,
+                ChannelAmountCents: record.ChannelAmountCents,
+                SystemAmountCents:  record.SystemAmountCents,
+                Status:             record.Status,
+                Handler:            record.Handler,
+                Result:             record.Result,
+                CreatedAt:          record.CreatedAt,
+                UpdatedAt:          record.UpdatedAt,
+</span>        }
+}
+
+func nullableTime(value time.Time) *time.Time {
+        <span class="cov8" title="1">if value.IsZero() </span>{
+                <span class="cov8" title="1">return nil
+</span>        }
+        <span class="cov8" title="1">return &amp;value</span>
+}
+
+func itoa(v int32) string {
+        <span class="cov8" title="1">if v == 0 </span>{
+                <span class="cov0" title="0">return "0"
+</span>        }
+        <span class="cov8" title="1">negative := v &lt; 0
+        if negative </span>{
+                <span class="cov0" title="0">v = -v
+</span>        }
+        <span class="cov8" title="1">buf := make([]byte, 0, 8)
+        for v &gt; 0 </span>{
+                <span class="cov8" title="1">buf = append([]byte{byte('0' + v%10)}, buf...)
+                v /= 10
+</span>        }
+        <span class="cov8" title="1">if negative </span>{
+                <span class="cov0" title="0">buf = append([]byte{'-'}, buf...)
+</span>        }
+        <span class="cov8" title="1">return string(buf)</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package service
+
+import (
+        "context"
+
+        "go.uber.org/zap"
+
+        "github.com/BwCloudWeGo/bw-cli/internal/order/dto"
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+)
+
+// Service 编排 order 用例。
+type Service struct {
+        repo entity.Repository
+        log  *zap.Logger
+}
+
+// NewService 创建 order 用例服务。
+func NewService(repo entity.Repository, log *zap.Logger) *Service {
+        <span class="cov8" title="1">if log == nil </span>{
+                <span class="cov0" title="0">log = zap.NewNop()
+</span>        }
+        <span class="cov8" title="1">return &amp;Service{repo: repo, log: log}</span>
+}
+
+// Create 创建 order 记录。
+func (s *Service) Create(ctx context.Context, cmd dto.CreateCommand) (*dto.OrderDTO, error) {
+        <span class="cov8" title="1">item, err := entity.NewOrder(cmd.Name, cmd.Description)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if err := s.repo.Save(ctx, item); err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">s.log.Info("order created", zap.String("aggregate_id", item.ID), zap.String("use_case", "CreateOrder"))
+        return dto.FromOrder(item), nil</span>
+}
+
+// Get 根据 ID 返回一条 order 记录。
+func (s *Service) Get(ctx context.Context, id string) (*dto.OrderDTO, error) {
+        <span class="cov8" title="1">item, err := s.repo.FindByID(ctx, id)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return dto.FromOrder(item), nil</span>
+}
+
+// List 返回分页 order 记录。
+func (s *Service) List(ctx context.Context, cmd dto.ListCommand) (*dto.ListOrderDTO, error) {
+        <span class="cov8" title="1">offset, limit := normalizePagination(cmd.Page, cmd.PageSize)
+        items, total, err := s.repo.List(ctx, offset, limit)
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">output := &amp;dto.ListOrderDTO{Items: make([]*dto.OrderDTO, 0, len(items)), Total: total}
+        for _, item := range items </span>{
+                <span class="cov8" title="1">output.Items = append(output.Items, dto.FromOrder(item))
+</span>        }
+        <span class="cov8" title="1">return output, nil</span>
+}
+
+// Update 根据 ID 修改一条 order 记录。
+func (s *Service) Update(ctx context.Context, cmd dto.UpdateCommand) (*dto.OrderDTO, error) {
+        <span class="cov8" title="1">item, err := s.repo.FindByID(ctx, cmd.ID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if err := item.Update(cmd.Name, cmd.Description); err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">if err := s.repo.Save(ctx, item); err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">s.log.Info("order updated", zap.String("aggregate_id", item.ID), zap.String("use_case", "UpdateOrder"))
+        return dto.FromOrder(item), nil</span>
+}
+
+// Delete 根据 ID 删除一条 order 记录。
+func (s *Service) Delete(ctx context.Context, id string) error {
+        <span class="cov8" title="1">if err := s.repo.Delete(ctx, id); err != nil </span>{
+                <span class="cov8" title="1">return err
+</span>        }
+        <span class="cov8" title="1">s.log.Info("order deleted", zap.String("aggregate_id", id), zap.String("use_case", "DeleteOrder"))
+        return nil</span>
+}
+
+func normalizePagination(page int32, pageSize int32) (int, int) {
+        <span class="cov8" title="1">if page &lt;= 0 </span>{
+                <span class="cov0" title="0">page = 1
+</span>        }
+        <span class="cov8" title="1">if pageSize &lt;= 0 </span>{
+                <span class="cov0" title="0">pageSize = 20
+</span>        }
+        <span class="cov8" title="1">if pageSize &gt; 100 </span>{
+                <span class="cov0" title="0">pageSize = 100
+</span>        }
+        <span class="cov8" title="1">return int((page - 1) * pageSize), int(pageSize)</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package service
+
+import (
+        "context"
+        "crypto/hmac"
+        "crypto/sha256"
+        "crypto/subtle"
+        "encoding/hex"
+        "errors"
+        "fmt"
+        "strings"
+        "time"
+
+        "go.uber.org/zap"
+
+        "github.com/BwCloudWeGo/bw-cli/internal/order/dto"
+        "github.com/BwCloudWeGo/bw-cli/internal/order/entity"
+)
+
+// DefaultChannelSecret 是模拟支付渠道与商城共享的验签密钥默认值（生产必须由配置注入）。
+const DefaultChannelSecret = "shop-mock-channel-secret"
+
+// TradeConfig 是交易域策略配置。
+type TradeConfig struct {
+        // Keep 是待支付订单保留期（服务端时间判定，默认 10 分钟）。
+        Keep time.Duration
+        // RefundFailFirst 开启后客服第一次退款会「渠道明确失败」，重试才成功（演示 S3）。
+        RefundFailFirst bool
+        // ChannelSecret 是支付回调 HMAC 验签密钥，渠道与商城共享。
+        ChannelSecret string
+}
+
+// SignPayNotify 计算渠道回调签名：HMAC-SHA256(secret, "trade_no|order_id|amount_cents") 十六进制小写。
+// 商城按同一算法自行计算比对，因此伪造/篡改金额的请求无法通过验签。
+func SignPayNotify(secret string, tradeNo string, orderID string, amountCents int64) string {
+        <span class="cov8" title="1">if secret == "" </span>{
+                <span class="cov8" title="1">secret = DefaultChannelSecret
+</span>        }
+        <span class="cov8" title="1">mac := hmac.New(sha256.New, []byte(secret))
+        _, _ = fmt.Fprintf(mac, "%s|%s|%d", tradeNo, orderID, amountCents)
+        return hex.EncodeToString(mac.Sum(nil))</span>
+}
+
+// TradeService 编排题目01 的交易用例：商品、订单状态机、支付回调、退款、发货、异常闭环、汇总。
+type TradeService struct {
+        repo entity.TradeRepository
+        cfg  TradeConfig
+        log  *zap.Logger
+}
+
+// NewTradeService 创建交易用例服务。
+func NewTradeService(repo entity.TradeRepository, cfg TradeConfig, log *zap.Logger) *TradeService {
+        <span class="cov8" title="1">if log == nil </span>{
+                <span class="cov8" title="1">log = zap.NewNop()
+</span>        }
+        <span class="cov8" title="1">if cfg.Keep &lt;= 0 </span>{
+                <span class="cov8" title="1">cfg.Keep = 10 * time.Minute
+</span>        }
+        <span class="cov8" title="1">if strings.TrimSpace(cfg.ChannelSecret) == "" </span>{
+                <span class="cov8" title="1">cfg.ChannelSecret = DefaultChannelSecret
+</span>        }
+        <span class="cov8" title="1">return &amp;TradeService{repo: repo, cfg: cfg, log: log}</span>
+}
+
+// SeedProducts 在商品表为空时播种预置商品（P1 单价 10000 分 / 可售 5 件，P2 单价 6800 分 / 可售 8 件）。
+func (s *TradeService) SeedProducts(ctx context.Context) error {
+        <span class="cov8" title="1">exists, err := s.repo.HasAnyProduct(ctx)
+        if err != nil </span>{
+                <span class="cov8" title="1">return err
+</span>        }
+        <span class="cov8" title="1">if exists </span>{
+                <span class="cov0" title="0">return nil
+</span>        }
+        <span class="cov8" title="1">seeds := []*entity.Product{
+                {ID: "P1", Name: "羊绒围巾 · 燕麦色", PriceCents: 10000, Total: 5, Available: 5, OnSale: true},
+                {ID: "P2", Name: "手作陶瓷马克杯", PriceCents: 6800, Total: 8, Available: 8, OnSale: true},
+</span>        }
+        <span class="cov8" title="1">for _, item := range seeds </span>{
+                <span class="cov8" title="1">if err := s.repo.SaveProduct(ctx, item); err != nil </span>{
+                        <span class="cov8" title="1">return err
+</span>                }
+        }
+        <span class="cov8" title="1">s.log.Info("trade products seeded", zap.Int("count", len(seeds)))
+        return nil</span>
+}
+
+// ListProducts 返回全部商品。
+func (s *TradeService) ListProducts(ctx context.Context) ([]*dto.ProductDTO, error) {
+        <span class="cov8" title="1">items, err := s.repo.ListProducts(ctx)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">output := make([]*dto.ProductDTO, 0, len(items))
+        for _, item := range items </span>{
+                <span class="cov8" title="1">output = append(output, dto.FromProduct(item))
+</span>        }
+        <span class="cov8" title="1">return output, nil</span>
+}
+
+// UpsertProduct 运营维护商品：价格与可售数量可调整，已有订单按下单快照不受影响。
+func (s *TradeService) UpsertProduct(ctx context.Context, cmd dto.UpsertProductCommand) (*dto.ProductDTO, error) {
+        <span class="cov8" title="1">if strings.TrimSpace(cmd.ID) == "" || strings.TrimSpace(cmd.Name) == "" </span>{
+                <span class="cov8" title="1">return nil, entity.ErrInvalidQty
+</span>        }
+        <span class="cov8" title="1">if cmd.PriceCents &lt;= 0 || cmd.Available &lt; 0 </span>{
+                <span class="cov8" title="1">return nil, entity.ErrInvalidQty
+</span>        }
+        <span class="cov8" title="1">product, err := s.repo.FindProduct(ctx, cmd.ID)
+        if err != nil &amp;&amp; !errors.Is(err, entity.ErrProductNotFound) </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if errors.Is(err, entity.ErrProductNotFound) </span>{
+                <span class="cov8" title="1">product = &amp;entity.Product{ID: cmd.ID, Total: cmd.Available}
+</span>        }
+        <span class="cov8" title="1">product.Name = cmd.Name
+        product.PriceCents = cmd.PriceCents
+        product.Available = cmd.Available
+        product.OnSale = cmd.OnSale
+        if product.Total &lt; product.Available </span>{
+                <span class="cov8" title="1">product.Total = product.Available
+</span>        }
+        <span class="cov8" title="1">if err := s.repo.SaveProduct(ctx, product); err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">s.log.Info("product upserted", zap.String("product_id", product.ID), zap.Int64("price_cents", product.PriceCents), zap.Int32("available", product.Available))
+        return dto.FromProduct(product), nil</span>
+}
+
+// PlaceOrder 买家下单：校验在售与数量，事务内预占库存并创建待支付订单。
+func (s *TradeService) PlaceOrder(ctx context.Context, cmd dto.PlaceOrderCommand) (*dto.TradeOrderDTO, error) {
+        <span class="cov8" title="1">if strings.TrimSpace(cmd.BuyerID) == "" </span>{
+                <span class="cov0" title="0">return nil, entity.ErrPermissionDenied
+</span>        }
+        <span class="cov8" title="1">order, err := s.repo.PlaceOrderTx(ctx, cmd.BuyerID, cmd.BuyerName, cmd.ProductID, cmd.Qty, s.cfg.Keep)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">s.log.Info("trade order placed", zap.String("order_id", order.ID), zap.String("buyer_id", order.BuyerID), zap.Int32("qty", order.Qty))
+        return s.GetOrder(ctx, order.ID)</span>
+}
+
+// CancelOrder 买家取消待支付订单：条件更新释放预占，重复取消不多释放。
+func (s *TradeService) CancelOrder(ctx context.Context, orderID string, buyerID string) (*dto.TradeOrderDTO, error) {
+        <span class="cov8" title="1">order, err := s.repo.FindTradeOrder(ctx, orderID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if order.BuyerID != buyerID </span>{
+                <span class="cov8" title="1">return nil, entity.ErrPermissionDenied
+</span>        }
+        <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusCreated, entity.OrderStatusClosed, order.Qty,
+                func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
+                        <span class="cov8" title="1">item.ClosedReason = "买家主动取消"
+                        return []entity.Ledger{{
+                                Kind:   entity.LedgerStock,
+                                Text:   "取消订单，释放预占 " + int32String(item.Qty) + " 件",
+                                Status: entity.OrderStatusClosed,
+                        }}, nil
+</span>                })
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if !applied </span>{
+                <span class="cov8" title="1">return nil, entity.ErrInvalidTransition
+</span>        }
+        <span class="cov8" title="1">s.log.Info("trade order cancelled", zap.String("order_id", order.ID))
+        return s.GetOrder(ctx, order.ID)</span>
+}
+
+// ApplyRefund 买家对已付款未发货订单申请整单退款：进入退款审核，冻结发货。
+func (s *TradeService) ApplyRefund(ctx context.Context, orderID string, buyerID string) (*dto.TradeOrderDTO, error) {
+        <span class="cov8" title="1">order, err := s.repo.FindTradeOrder(ctx, orderID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if order.BuyerID != buyerID </span>{
+                <span class="cov8" title="1">return nil, entity.ErrPermissionDenied
+</span>        }
+        <span class="cov8" title="1">if order.Status == entity.OrderStatusShipped </span>{
+                <span class="cov8" title="1">return nil, entity.ErrRefundNotAllowed
+</span>        }
+        <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusPaid, entity.OrderStatusRefunding, 0,
+                func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
+                        <span class="cov8" title="1">return []entity.Ledger{{
+                                Kind:        entity.LedgerRefund,
+                                Text:        "买家申请整单退款，已冻结发货",
+                                AmountCents: item.AmountCents(),
+                                Status:      "processing",
+                        }}, nil
+</span>                })
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">if !applied </span>{
+                <span class="cov8" title="1">return nil, entity.ErrInvalidTransition
+</span>        }
+        <span class="cov8" title="1">s.log.Info("refund applied", zap.String("order_id", order.ID))
+        return s.GetOrder(ctx, order.ID)</span>
+}
+
+// AuditRefund 客服退款审核：同意走渠道退款（成功才回补库存），拒绝须写原因并恢复待发货。
+// 已退款订单重复审核/渠道重复退款通知按幂等返回成功，不重复打款、不回补库存。
+func (s *TradeService) AuditRefund(ctx context.Context, cmd dto.AuditRefundCommand) (*dto.AuditRefundResult, error) {
+        <span class="cov8" title="1">order, err := s.repo.FindTradeOrder(ctx, cmd.OrderID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if order.Status == entity.OrderStatusRefunded </span>{
+                <span class="cov8" title="1">detail, err := s.GetOrder(ctx, order.ID)
+                if err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">return &amp;dto.AuditRefundResult{
+                        Order:     detail,
+                        Duplicate: true,
+                        Message:   "退款已成功：本次为重复提交或重复退款通知，按幂等返回成功（不重复打款、不回补库存）",
+                }, nil</span>
+        }
+        <span class="cov8" title="1">if order.Status != entity.OrderStatusRefunding </span>{
+                <span class="cov8" title="1">return nil, entity.ErrInvalidTransition
+</span>        }
+        <span class="cov8" title="1">if !cmd.Approve </span>{
+                <span class="cov8" title="1">if strings.TrimSpace(cmd.Reason) == "" </span>{
+                        <span class="cov8" title="1">return nil, entity.ErrReasonRequired
+</span>                }
+                <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusRefunding, entity.OrderStatusPaid, 0,
+                        func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
+                                <span class="cov8" title="1">item.RejectReason = cmd.Reason
+                                return []entity.Ledger{{
+                                        Kind:   entity.LedgerRefund,
+                                        Text:   "客服拒绝退款（" + cmd.Operator + "）：" + cmd.Reason + "（订单恢复待发货）",
+                                        Status: "rejected",
+                                }}, nil
+</span>                        })
+                <span class="cov8" title="1">if err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">if !applied </span>{
+                        <span class="cov0" title="0">return nil, entity.ErrInvalidTransition
+</span>                }
+                <span class="cov8" title="1">detail, err := s.GetOrder(ctx, order.ID)
+                if err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">s.log.Info("refund rejected", zap.String("order_id", order.ID), zap.String("operator", cmd.Operator))
+                return &amp;dto.AuditRefundResult{Order: detail, Message: "已拒绝退款，订单恢复待发货"}, nil</span>
+        }
+
+        // 渠道明确失败：保持 REFUNDING，保留待处理记录，等待客服重试。
+        <span class="cov8" title="1">if s.cfg.RefundFailFirst &amp;&amp; !order.RefundFail </span>{
+                <span class="cov8" title="1">applied, err := s.repo.MarkRefundFailed(ctx, order.ID)
+                if err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">if !applied </span>{
+                        <span class="cov0" title="0">return nil, entity.ErrInvalidTransition
+</span>                }
+                <span class="cov8" title="1">s.log.Warn("channel refund failed", zap.String("order_id", order.ID))
+                return nil, entity.ErrChannelRefundFailed</span>
+        }
+
+        // 退款成功：仅正常售前退款回补库存；迟到支付退款不回补（此前已释放，回补即超卖）。
+        <span class="cov8" title="1">restock := int32(0)
+        if order.Origin == entity.OrderOriginSale </span>{
+                <span class="cov8" title="1">restock = order.Qty
+</span>        }
+        <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusRefunding, entity.OrderStatusRefunded, restock,
+                func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
+                        <span class="cov8" title="1">ledgers := []entity.Ledger{{
+                                Kind:        entity.LedgerRefund,
+                                Text:        "渠道退款成功，原路退回",
+                                AmountCents: item.AmountCents(),
+                                TradeNo:     "RF" + item.ID,
+                                Status:      "success",
+</span>                        }}
+                        <span class="cov8" title="1">if item.Origin == entity.OrderOriginSale </span>{
+                                <span class="cov8" title="1">ledgers = append(ledgers, entity.Ledger{
+                                        Kind:   entity.LedgerStock,
+                                        Text:   "售前退款成功，回补可售 " + int32String(item.Qty) + " 件",
+                                        Status: entity.OrderStatusRefunded,
+                                })
+</span>                        }
+                        <span class="cov8" title="1">return ledgers, nil</span>
+                })
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">if !applied </span>{
+                <span class="cov0" title="0">return nil, entity.ErrInvalidTransition
+</span>        }
+        <span class="cov8" title="1">detail, err := s.GetOrder(ctx, order.ID)
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">s.log.Info("refund succeeded", zap.String("order_id", order.ID), zap.String("operator", cmd.Operator), zap.Int32("restock", restock))
+        message := "渠道退款成功，已回补可售数量"
+        if restock == 0 </span>{
+                <span class="cov0" title="0">message = "渠道退款成功，迟到支付退款不回补库存"
+</span>        }
+        <span class="cov8" title="1">return &amp;dto.AuditRefundResult{Order: detail, Message: message}, nil</span>
+}
+
+// ShipOrder 仓库为合法待发货订单登记一次发货。
+func (s *TradeService) ShipOrder(ctx context.Context, cmd dto.ShipOrderCommand) (*dto.TradeOrderDTO, error) {
+        <span class="cov8" title="1">if strings.TrimSpace(cmd.Carrier) == "" || strings.TrimSpace(cmd.TrackingNo) == "" </span>{
+                <span class="cov8" title="1">return nil, entity.ErrCarrierRequired
+</span>        }
+        <span class="cov8" title="1">order, err := s.repo.FindTradeOrder(ctx, cmd.OrderID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">switch order.Status </span>{
+        case entity.OrderStatusRefunding:
+                <span class="cov0" title="0">return nil, entity.ErrOrderRefunding</span>
+        case entity.OrderStatusShipped:
+                <span class="cov0" title="0">return nil, entity.ErrOrderAlreadyShipped</span>
+        case entity.OrderStatusClosed:
+                <span class="cov8" title="1">return nil, entity.ErrOrderClosed</span>
+        case entity.OrderStatusRefunded:
+                <span class="cov8" title="1">return nil, entity.ErrOrderRefunded</span>
+        case entity.OrderStatusPaid:<span class="cov8" title="1"></span>
+        default:
+                <span class="cov0" title="0">return nil, entity.ErrInvalidTransition</span>
+        }
+        <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusPaid, entity.OrderStatusShipped, 0,
+                func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
+                        <span class="cov8" title="1">item.Carrier = cmd.Carrier
+                        item.TrackingNo = cmd.TrackingNo
+                        return []entity.Ledger{{
+                                Kind:   entity.LedgerShip,
+                                Text:   "仓库发货登记：" + cmd.Carrier + " 运单 " + cmd.TrackingNo + "（操作人 " + cmd.Operator + "）",
+                                Status: entity.OrderStatusShipped,
+                        }}, nil
+</span>                })
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">if !applied </span>{
+                <span class="cov8" title="1">return nil, entity.ErrInvalidTransition
+</span>        }
+        <span class="cov8" title="1">s.log.Info("order shipped", zap.String("order_id", order.ID), zap.String("tracking_no", cmd.TrackingNo))
+        return s.GetOrder(ctx, order.ID)</span>
+}
+
+// PayNotify 处理渠道支付通知，固定六步 + 幂等三道防线。
+func (s *TradeService) PayNotify(ctx context.Context, cmd dto.PayNotifyCommand) (*dto.PayNotifyResult, error) {
+        <span class="cov8" title="1">if strings.TrimSpace(cmd.TradeNo) == "" || strings.TrimSpace(cmd.OrderID) == "" </span>{
+                <span class="cov8" title="1">return &amp;dto.PayNotifyResult{Success: false, Code: "invalid_argument", Message: "缺少渠道交易号或订单号"}, nil
+</span>        }
+        // 第 1 步：持久化回调记录（入口幂等：channel_trade_no 主键冲突即重复通知）
+        <span class="cov8" title="1">if err := s.repo.SaveCallback(ctx, &amp;entity.PayCallback{
+                TradeNo:     cmd.TradeNo,
+                OrderID:     cmd.OrderID,
+                AmountCents: cmd.AmountCents,
+                Status:      entity.CallbackReceived,
+        }); err != nil </span>{
+                <span class="cov8" title="1">if errors.Is(err, entity.ErrDuplicateTradeNo) </span>{
+                        <span class="cov8" title="1">_ = s.repo.IncrementCallbackHits(ctx, cmd.TradeNo)
+                        s.log.Info("duplicate callback rejected", zap.String("trade_no", cmd.TradeNo))
+                        return &amp;dto.PayNotifyResult{Success: true, Duplicate: true, Code: "duplicate", Message: "重复通知：已处理过，返回成功（入口幂等，不重复入账）"}, nil
+</span>                }
+                <span class="cov8" title="1">return nil, err</span>
+        }
+
+        // 第 2 步：验签（服务端用共享密钥重算 HMAC，不信任调用方任何声明），失败记录 FAILED 并返回失败码
+        <span class="cov8" title="1">expected := SignPayNotify(s.cfg.ChannelSecret, cmd.TradeNo, cmd.OrderID, cmd.AmountCents)
+        provided := strings.ToLower(strings.TrimSpace(cmd.Signature))
+        if subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) != 1 </span>{
+                <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackFailed)
+                if err := s.recordException(ctx, entity.ExcBadSignature, cmd, nil); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">return &amp;dto.PayNotifyResult{Success: false, Code: "verify_failed", Message: "验签失败：签名缺失或不匹配，回调记录 FAILED，已落异常表并可反查（渠道会重试）"}, nil</span>
+        }
+
+        // 第 3 步：查订单，不存在落「无主支付」
+        <span class="cov8" title="1">order, err := s.repo.FindTradeOrder(ctx, cmd.OrderID)
+        if errors.Is(err, entity.ErrTradeOrderNotFound) </span>{
+                <span class="cov8" title="1">if err := s.recordException(ctx, entity.ExcNoOwner, cmd, nil); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackFailed)
+                return &amp;dto.PayNotifyResult{Success: false, Code: "order_not_found", Message: "无主支付：订单不存在，已落异常表（可用渠道交易号反查），返回失败码"}, nil</span>
+        }
+        <span class="cov8" title="1">if err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+
+        // 第 4 步：金额比对，不一致绝不入账
+        <span class="cov8" title="1">if cmd.AmountCents != order.AmountCents() </span>{
+                <span class="cov8" title="1">if err := s.recordException(ctx, entity.ExcAmountMismatch, cmd, order); err != nil </span>{
+                        <span class="cov8" title="1">return nil, err
+</span>                }
+                <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackFailed)
+                return &amp;dto.PayNotifyResult{Success: false, Code: "amount_mismatch", Message: "金额不符：不入账、不发货，已落异常表，返回失败码"}, nil</span>
+        }
+
+        // 第 5 步：按订单状态分流
+        <span class="cov8" title="1">switch order.Status </span>{
+        case entity.OrderStatusCreated:
+                <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusCreated, entity.OrderStatusPaid, 0,
+                        func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
+                                <span class="cov8" title="1">now := time.Now()
+                                item.PaidAt = now
+                                return []entity.Ledger{
+                                        {Kind: entity.LedgerPay, Text: "支付成功入账（预占转实扣）", AmountCents: item.AmountCents(), TradeNo: cmd.TradeNo, Status: "success", Time: now},
+                                        {Kind: entity.LedgerStock, Text: "预占转实扣 " + int32String(item.Qty) + " 件", Status: entity.OrderStatusPaid, Time: now},
+                                }, nil
+</span>                        })
+                <span class="cov8" title="1">if err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">if !applied </span>{
+                        // 结果幂等：并发通知中已被其他请求处理
+                        <span class="cov0" title="0">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
+                        return &amp;dto.PayNotifyResult{Success: true, Duplicate: true, Code: "duplicate", Message: "并发通知：订单已由其他请求处理，返回成功（状态仅迁移一次）"}, nil
+</span>                }
+                <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
+                s.log.Info("payment accepted", zap.String("order_id", order.ID), zap.String("trade_no", cmd.TradeNo))
+                return &amp;dto.PayNotifyResult{Success: true, Code: "success", Message: "支付成功：订单 " + order.ID + " → 待发货"}, nil</span>
+
+        case entity.OrderStatusPaid, entity.OrderStatusShipped, entity.OrderStatusRefunding:
+                <span class="cov8" title="1">if err := s.recordException(ctx, entity.ExcDoubleCharge, cmd, order); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
+                return &amp;dto.PayNotifyResult{Success: true, Code: "success", Message: "订单已收款：判定重复扣款，落异常表，返回成功（不重复记款）"}, nil</span>
+
+        default:
+                // CLOSED / REFUNDED：不恢复订单、不重新占用库存，落「关单后到账」由客服核实退款
+                <span class="cov8" title="1">if err := s.recordException(ctx, entity.ExcLatePay, cmd, order); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
+                return &amp;dto.PayNotifyResult{Success: true, Code: "success", Message: "订单已关闭/已退款：落异常表「关单后到账」，返回成功（订单状态保持不变）"}, nil</span>
+        }
+}
+
+// ListExceptions 查询支付异常记录。
+func (s *TradeService) ListExceptions(ctx context.Context, onlyPending bool) ([]*dto.ExceptionPayDTO, error) {
+        <span class="cov8" title="1">items, err := s.repo.ListExceptions(ctx, onlyPending)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">output := make([]*dto.ExceptionPayDTO, 0, len(items))
+        for _, item := range items </span>{
+                <span class="cov8" title="1">output = append(output, dto.FromExceptionPay(item))
+</span>        }
+        <span class="cov8" title="1">return output, nil</span>
+}
+
+// HandleException 客服处置支付异常：原路退款 / 联系渠道核实 / 标记忽略（须留原因）。
+// 迟到支付退款：订单保持 CLOSED，仅写退款流水，不回补库存。
+func (s *TradeService) HandleException(ctx context.Context, cmd dto.HandleExceptionCommand) (*dto.ExceptionPayDTO, error) {
+        <span class="cov8" title="1">exception, err := s.repo.FindException(ctx, cmd.ExceptionID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if exception.Status != entity.ExcStatusPending </span>{
+                <span class="cov8" title="1">return nil, entity.ErrExceptionClosed
+</span>        }
+        <span class="cov8" title="1">operator := strings.TrimSpace(cmd.Operator)
+        if operator == "" </span>{
+                <span class="cov0" title="0">operator = "客服"
+</span>        }
+        <span class="cov8" title="1">reason := strings.TrimSpace(cmd.Reason)
+        switch cmd.Action </span>{
+        case "refund":
+                <span class="cov8" title="1">if exception.Type == entity.ExcNoOwner || exception.OrderID == "" </span>{
+                        <span class="cov8" title="1">return nil, entity.ErrExceptionNoRefund
+</span>                }
+                <span class="cov8" title="1">if reason == "" </span>{
+                        <span class="cov8" title="1">reason = "核实后原路退款"
+</span>                }
+                <span class="cov8" title="1">order, err := s.repo.FindTradeOrder(ctx, exception.OrderID)
+                if err != nil </span>{
+                        <span class="cov8" title="1">return nil, err
+</span>                }
+                <span class="cov8" title="1">if err := s.repo.CloseException(ctx, exception.ID, operator, "核实后原路退款成功（"+order.ID+"）；原因："+reason); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                // 订单保持原状态：仅记录退款结果，不恢复订单、不动库存
+                <span class="cov8" title="1">if err := s.repo.AppendLedger(ctx, &amp;entity.Ledger{
+                        OrderID:     order.ID,
+                        Kind:        entity.LedgerRefund,
+                        Text:        "迟到支付退款：原路退回（不回补库存，订单保持 " + order.Status + "）",
+                        AmountCents: exception.ChannelAmountCents,
+                        TradeNo:     "RF" + exception.TradeNo,
+                        Status:      "success",
+                        Time:        time.Now(),
+                }); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">if err := s.appendExceptionLedger(ctx, exception, "客服从异常表发起退款（"+operator+"）："+reason); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">s.log.Info("late payment refunded", zap.String("exception_id", exception.ID), zap.String("order_id", order.ID))</span>
+        case "ignore":
+                <span class="cov8" title="1">if reason == "" </span>{
+                        <span class="cov8" title="1">return nil, entity.ErrReasonRequired
+</span>                }
+                <span class="cov8" title="1">if err := s.repo.CloseException(ctx, exception.ID, operator, "标记忽略："+reason); err != nil </span>{
+                        <span class="cov8" title="1">return nil, err
+</span>                }
+                <span class="cov8" title="1">if err := s.appendExceptionLedger(ctx, exception, "客服标记忽略（"+operator+"）："+reason); err != nil </span>{
+                        <span class="cov8" title="1">return nil, err
+</span>                }
+        default: // verify
+                <span class="cov8" title="1">if reason == "" </span>{
+                        <span class="cov8" title="1">return nil, entity.ErrReasonRequired
+</span>                }
+                <span class="cov8" title="1">if err := s.repo.CloseException(ctx, exception.ID, operator, "已联系渠道核实："+reason); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">if err := s.appendExceptionLedger(ctx, exception, "客服联系渠道核实（"+operator+"）："+reason); err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+        }
+        <span class="cov8" title="1">closed, err := s.repo.FindException(ctx, exception.ID)
+        if err != nil </span>{
+                <span class="cov0" title="0">return nil, err
+</span>        }
+        <span class="cov8" title="1">return dto.FromExceptionPay(closed), nil</span>
+}
+
+// appendExceptionLedger 把异常处置结果写入订单台账，保证运营按订单能查到异常处理记录。
+// 无主支付没有绑定订单，直接跳过（异常表本身已留痕）。
+func (s *TradeService) appendExceptionLedger(ctx context.Context, exception *entity.ExceptionPay, text string) error {
+        <span class="cov8" title="1">if strings.TrimSpace(exception.OrderID) == "" </span>{
+                <span class="cov8" title="1">return nil
+</span>        }
+        <span class="cov8" title="1">return s.repo.AppendLedger(ctx, &amp;entity.Ledger{
+                OrderID:     exception.OrderID,
+                Kind:        entity.LedgerException,
+                Text:        text,
+                AmountCents: exception.ChannelAmountCents,
+                TradeNo:     exception.TradeNo,
+                Status:      entity.ExcStatusClosed,
+                Time:        time.Now(),
+        })</span>
+}
+
+// GetCallback 用渠道交易号反查回调处理结果：验签失败、金额不符、无主支付均可查询。
+func (s *TradeService) GetCallback(ctx context.Context, tradeNo string) (*dto.PayCallbackDTO, error) {
+        <span class="cov8" title="1">tradeNo = strings.TrimSpace(tradeNo)
+        if tradeNo == "" </span>{
+                <span class="cov8" title="1">return nil, entity.ErrCallbackNotFound
+</span>        }
+        <span class="cov8" title="1">callback, err := s.repo.FindCallback(ctx, tradeNo)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">if callback == nil </span>{
+                <span class="cov8" title="1">return nil, entity.ErrCallbackNotFound
+</span>        }
+        <span class="cov8" title="1">exception, err := s.repo.FindExceptionByTradeNo(ctx, tradeNo)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return dto.FromPayCallback(callback, exception), nil</span>
+}
+
+// ListCallbacks 查询回调记录（客服/运营），keyword 支持渠道交易号或订单号。
+func (s *TradeService) ListCallbacks(ctx context.Context, keyword string, status string) ([]*dto.PayCallbackDTO, error) {
+        <span class="cov8" title="1">items, err := s.repo.ListCallbacks(ctx, keyword, status)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">output := make([]*dto.PayCallbackDTO, 0, len(items))
+        for _, item := range items </span>{
+                <span class="cov8" title="1">exception, err := s.repo.FindExceptionByTradeNo(ctx, item.TradeNo)
+                if err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">output = append(output, dto.FromPayCallback(item, exception))</span>
+        }
+        <span class="cov8" title="1">return output, nil</span>
+}
+
+// GetOrder 返回订单详情（含台账时间线）。
+func (s *TradeService) GetOrder(ctx context.Context, orderID string) (*dto.TradeOrderDTO, error) {
+        <span class="cov8" title="1">order, err := s.repo.FindTradeOrder(ctx, orderID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">ledgers, err := s.repo.ListLedgers(ctx, orderID)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return dto.FromTradeOrder(order, ledgers), nil</span>
+}
+
+// ListOrders 按买家/状态过滤订单列表（对角色视图统一服务端过滤）。
+func (s *TradeService) ListOrders(ctx context.Context, buyerID string, status string) (*dto.ListTradeOrderDTO, error) {
+        <span class="cov8" title="1">items, total, err := s.repo.ListTradeOrders(ctx, buyerID, status)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">output := &amp;dto.ListTradeOrderDTO{Items: make([]*dto.TradeOrderDTO, 0, len(items)), Total: total}
+        for _, item := range items </span>{
+                <span class="cov8" title="1">ledgers, err := s.repo.ListLedgers(ctx, item.ID)
+                if err != nil </span>{
+                        <span class="cov0" title="0">return nil, err
+</span>                }
+                <span class="cov8" title="1">output.Items = append(output.Items, dto.FromTradeOrder(item, ledgers))</span>
+        }
+        <span class="cov8" title="1">return output, nil</span>
+}
+
+// Summary 返回运营核查汇总。
+func (s *TradeService) Summary(ctx context.Context) (*dto.TradeSummaryDTO, error) {
+        <span class="cov8" title="1">summary, err := s.repo.TradeSummary(ctx)
+        if err != nil </span>{
+                <span class="cov8" title="1">return nil, err
+</span>        }
+        <span class="cov8" title="1">return dto.FromSummary(summary), nil</span>
+}
+
+// SweepExpired 关闭已超保留期的待支付订单并释放预占（服务端时间判定，重复执行不多释放）。
+func (s *TradeService) SweepExpired(ctx context.Context) (int, error) {
+        <span class="cov8" title="1">expired, err := s.repo.ListExpiredCreated(ctx, time.Now())
+        if err != nil </span>{
+                <span class="cov8" title="1">return 0, err
+</span>        }
+        <span class="cov8" title="1">closed := 0
+        for _, order := range expired </span>{
+                <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusCreated, entity.OrderStatusClosed, order.Qty,
+                        func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
+                                <span class="cov8" title="1">item.ClosedReason = "超时关闭（服务端时间判定）"
+                                return []entity.Ledger{{
+                                        Kind:   entity.LedgerStock,
+                                        Text:   "超时关闭，释放预占 " + int32String(item.Qty) + " 件",
+                                        Status: entity.OrderStatusClosed,
+                                }}, nil
+</span>                        })
+                <span class="cov8" title="1">if err != nil </span>{
+                        <span class="cov0" title="0">return closed, err
+</span>                }
+                <span class="cov8" title="1">if applied </span>{
+                        <span class="cov8" title="1">closed++
+                        s.log.Info("order closed by timeout", zap.String("order_id", order.ID))
+</span>                }
+        }
+        <span class="cov8" title="1">return closed, nil</span>
+}
+
+func (s *TradeService) recordException(ctx context.Context, excType string, cmd dto.PayNotifyCommand, order *entity.TradeOrder) error {
+        <span class="cov8" title="1">systemAmount := int64(-1)
+        orderID := ""
+        if order != nil </span>{
+                <span class="cov8" title="1">systemAmount = order.AmountCents()
+                orderID = order.ID
+</span>        }
+        <span class="cov8" title="1">exception := &amp;entity.ExceptionPay{
+                ID:                 entity.NewExceptionPayID(),
+                Type:               excType,
+                OrderID:            orderID,
+                TradeNo:            cmd.TradeNo,
+                ChannelAmountCents: cmd.AmountCents,
+                SystemAmountCents:  systemAmount,
+                Status:             entity.ExcStatusPending,
+</span>        }
+        <span class="cov8" title="1">if err := s.repo.SaveException(ctx, exception); err != nil </span>{
+                <span class="cov8" title="1">return err
+</span>        }
+        <span class="cov8" title="1">s.log.Warn("payment exception recorded", zap.String("exception_id", exception.ID), zap.String("type", excType), zap.String("trade_no", cmd.TradeNo))
+        return nil</span>
+}
+
+func int32String(v int32) string {
+        <span class="cov8" title="1">if v == 0 </span>{
+                <span class="cov0" title="0">return "0"
+</span>        }
+        <span class="cov8" title="1">negative := v &lt; 0
+        if negative </span>{
+                <span class="cov0" title="0">v = -v
+</span>        }
+        <span class="cov8" title="1">buf := make([]byte, 0, 8)
+        for v &gt; 0 </span>{
+                <span class="cov8" title="1">buf = append([]byte{byte('0' + v%10)}, buf...)
+                v /= 10
+</span>        }
+        <span class="cov8" title="1">if negative </span>{
+                <span class="cov0" title="0">buf = append([]byte{'-'}, buf...)
+</span>        }
+        <span class="cov8" title="1">return string(buf)</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
