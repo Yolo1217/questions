@@ -63,7 +63,7 @@
 				
 				<option value="file3">github.com/BwCloudWeGo/bw-cli/internal/gateway/handler/order_handler.go (88.4%)</option>
 				
-				<option value="file4">github.com/BwCloudWeGo/bw-cli/internal/gateway/handler/trade_handler.go (90.4%)</option>
+				<option value="file4">github.com/BwCloudWeGo/bw-cli/internal/gateway/handler/trade_handler.go (91.6%)</option>
 				
 				<option value="file5">github.com/BwCloudWeGo/bw-cli/internal/gateway/handler/user_handler.go (74.4%)</option>
 				
@@ -107,7 +107,7 @@
 				
 				<option value="file25">github.com/BwCloudWeGo/bw-cli/internal/order/service/service.go (81.0%)</option>
 				
-				<option value="file26">github.com/BwCloudWeGo/bw-cli/internal/order/service/trade_service.go (88.6%)</option>
+				<option value="file26">github.com/BwCloudWeGo/bw-cli/internal/order/service/trade_service.go (88.5%)</option>
 				
 				<option value="file27">github.com/BwCloudWeGo/bw-cli/pkg/middleware/cors.go (100.0%)</option>
 				
@@ -478,7 +478,7 @@ func (h *OrderHandler) PlaceTradeOrder(c *gin.Context) {
                 Qty:       req.Qty,
         })
         if err != nil </span>{
-                <span class="cov0" title="0">httpx.Error(c, apperrors.FromGRPC(err))
+                <span class="cov8" title="1">httpx.Error(c, apperrors.FromGRPC(err))
                 return
 </span>        }
         <span class="cov8" title="1">h.log.Info("gateway trade order placed", logFields(c, resp.GetId())...)
@@ -3494,7 +3494,7 @@ func (s *TradeService) UpsertProduct(ctx context.Context, cmd dto.UpsertProductC
 // PlaceOrder 买家下单：校验在售与数量，事务内预占库存并创建待支付订单。
 func (s *TradeService) PlaceOrder(ctx context.Context, cmd dto.PlaceOrderCommand) (*dto.TradeOrderDTO, error) {
         <span class="cov8" title="1">if strings.TrimSpace(cmd.BuyerID) == "" </span>{
-                <span class="cov0" title="0">return nil, entity.ErrPermissionDenied
+                <span class="cov8" title="1">return nil, entity.ErrPermissionDenied
 </span>        }
         <span class="cov8" title="1">order, err := s.repo.PlaceOrderTx(ctx, cmd.BuyerID, cmd.BuyerName, cmd.ProductID, cmd.Qty, s.cfg.Keep)
         if err != nil </span>{
@@ -3685,7 +3685,7 @@ func (s *TradeService) ShipOrder(ctx context.Context, cmd dto.ShipOrderCommand) 
                 <span class="cov8" title="1">return nil, entity.ErrOrderRefunded</span>
         case entity.OrderStatusPaid:<span class="cov8" title="1"></span>
         default:
-                <span class="cov0" title="0">return nil, entity.ErrInvalidTransition</span>
+                <span class="cov8" title="1">return nil, entity.ErrInvalidTransition</span>
         }
         <span class="cov8" title="1">applied, err := s.repo.TransitionOrder(ctx, order.ID, entity.OrderStatusPaid, entity.OrderStatusShipped, 0,
                 func(item *entity.TradeOrder) ([]entity.Ledger, error) </span>{
@@ -3701,7 +3701,7 @@ func (s *TradeService) ShipOrder(ctx context.Context, cmd dto.ShipOrderCommand) 
                 <span class="cov0" title="0">return nil, err
 </span>        }
         <span class="cov8" title="1">if !applied </span>{
-                <span class="cov8" title="1">return nil, entity.ErrInvalidTransition
+                <span class="cov0" title="0">return nil, entity.ErrInvalidTransition
 </span>        }
         <span class="cov8" title="1">s.log.Info("order shipped", zap.String("order_id", order.ID), zap.String("tracking_no", cmd.TrackingNo))
         return s.GetOrder(ctx, order.ID)</span>
@@ -3778,10 +3778,25 @@ func (s *TradeService) PayNotify(ctx context.Context, cmd dto.PayNotifyCommand) 
                         <span class="cov0" title="0">return nil, err
 </span>                }
                 <span class="cov8" title="1">if !applied </span>{
+                        // 缺陷整改（独立测试 D-2）：迁移失败不能一律当"重复"返回成功——
+                        // 若订单已被超时关单/退款收敛到终态，本笔真实支付将既无流水也无异常，
+                        // 资金悬置且渠道不再重推。终态场景必须落「关单后到账」异常闭环。
+                        <span class="cov8" title="1">latest, rerr := s.repo.FindTradeOrder(ctx, order.ID)
+                        if rerr != nil </span>{
+                                <span class="cov0" title="0">return nil, rerr
+</span>                        }
+                        <span class="cov8" title="1">if latest.Status == entity.OrderStatusClosed || latest.Status == entity.OrderStatusRefunded </span>{
+                                <span class="cov8" title="1">if err := s.recordException(ctx, entity.ExcLatePay, cmd, latest); err != nil </span>{
+                                        <span class="cov0" title="0">return nil, err
+</span>                                }
+                                <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
+                                s.log.Warn("late pay during close race", zap.String("order_id", order.ID), zap.String("trade_no", cmd.TradeNo))
+                                return &amp;dto.PayNotifyResult{Success: true, Code: "success", Message: "支付确认前订单已关闭：落「关单后到账」异常，由客服核实退款"}, nil</span>
+                        }
                         // 结果幂等：并发通知中已被其他请求处理
                         <span class="cov0" title="0">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
-                        return &amp;dto.PayNotifyResult{Success: true, Duplicate: true, Code: "duplicate", Message: "并发通知：订单已由其他请求处理，返回成功（状态仅迁移一次）"}, nil
-</span>                }
+                        return &amp;dto.PayNotifyResult{Success: true, Duplicate: true, Code: "duplicate", Message: "并发通知：订单已由其他请求处理，返回成功（状态仅迁移一次）"}, nil</span>
+                }
                 <span class="cov8" title="1">_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
                 s.log.Info("payment accepted", zap.String("order_id", order.ID), zap.String("trade_no", cmd.TradeNo))
                 return &amp;dto.PayNotifyResult{Success: true, Code: "success", Message: "支付成功：订单 " + order.ID + " → 待发货"}, nil</span>
@@ -4012,6 +4027,16 @@ func (s *TradeService) SweepExpired(ctx context.Context) (int, error) {
 }
 
 func (s *TradeService) recordException(ctx context.Context, excType string, cmd dto.PayNotifyCommand, order *entity.TradeOrder) error {
+        // 缺陷整改（独立测试 D-1）：同一渠道流水号、同类型且仍待处理的异常只保留一条。
+        // 验签失败的伪造流量可反复重推（回调记录不落库、入口幂等拦不住），若每次都新增
+        // 工单会刷爆客服工作台；此处去重，后续重推仅记日志（首个工单仍可反查与闭环）。
+        <span class="cov8" title="1">if existing, err := s.repo.FindExceptionByTradeNo(ctx, cmd.TradeNo); err != nil </span>{
+                <span class="cov0" title="0">return err
+</span>        } else <span class="cov8" title="1">if existing != nil &amp;&amp; existing.Type == excType &amp;&amp; existing.Status == entity.ExcStatusPending </span>{
+                <span class="cov8" title="1">s.log.Warn("duplicate pending exception suppressed",
+                        zap.String("trade_no", cmd.TradeNo), zap.String("type", excType), zap.String("existing_id", existing.ID))
+                return nil
+</span>        }
         <span class="cov8" title="1">systemAmount := int64(-1)
         orderID := ""
         if order != nil </span>{

@@ -413,6 +413,21 @@ func (s *TradeService) PayNotify(ctx context.Context, cmd dto.PayNotifyCommand) 
 			return nil, err
 		}
 		if !applied {
+			// 缺陷整改（独立测试 D-2）：迁移失败不能一律当"重复"返回成功——
+			// 若订单已被超时关单/退款收敛到终态，本笔真实支付将既无流水也无异常，
+			// 资金悬置且渠道不再重推。终态场景必须落「关单后到账」异常闭环。
+			latest, rerr := s.repo.FindTradeOrder(ctx, order.ID)
+			if rerr != nil {
+				return nil, rerr
+			}
+			if latest.Status == entity.OrderStatusClosed || latest.Status == entity.OrderStatusRefunded {
+				if err := s.recordException(ctx, entity.ExcLatePay, cmd, latest); err != nil {
+					return nil, err
+				}
+				_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
+				s.log.Warn("late pay during close race", zap.String("order_id", order.ID), zap.String("trade_no", cmd.TradeNo))
+				return &dto.PayNotifyResult{Success: true, Code: "success", Message: "支付确认前订单已关闭：落「关单后到账」异常，由客服核实退款"}, nil
+			}
 			// 结果幂等：并发通知中已被其他请求处理
 			_ = s.repo.UpdateCallbackStatus(ctx, cmd.TradeNo, entity.CallbackDone)
 			return &dto.PayNotifyResult{Success: true, Duplicate: true, Code: "duplicate", Message: "并发通知：订单已由其他请求处理，返回成功（状态仅迁移一次）"}, nil
@@ -647,6 +662,16 @@ func (s *TradeService) SweepExpired(ctx context.Context) (int, error) {
 }
 
 func (s *TradeService) recordException(ctx context.Context, excType string, cmd dto.PayNotifyCommand, order *entity.TradeOrder) error {
+	// 缺陷整改（独立测试 D-1）：同一渠道流水号、同类型且仍待处理的异常只保留一条。
+	// 验签失败的伪造流量可反复重推（回调记录不落库、入口幂等拦不住），若每次都新增
+	// 工单会刷爆客服工作台；此处去重，后续重推仅记日志（首个工单仍可反查与闭环）。
+	if existing, err := s.repo.FindExceptionByTradeNo(ctx, cmd.TradeNo); err != nil {
+		return err
+	} else if existing != nil && existing.Type == excType && existing.Status == entity.ExcStatusPending {
+		s.log.Warn("duplicate pending exception suppressed",
+			zap.String("trade_no", cmd.TradeNo), zap.String("type", excType), zap.String("existing_id", existing.ID))
+		return nil
+	}
 	systemAmount := int64(-1)
 	orderID := ""
 	if order != nil {
