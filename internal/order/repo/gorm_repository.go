@@ -27,9 +27,12 @@ func NewGormRepository(db *gorm.DB, loggers ...*zap.Logger) *GormRepository {
 	return &GormRepository{db: db, log: log}
 }
 
-// AutoMigrate 创建或更新 orders 表结构。
+// AutoMigrate 创建或更新 orders 表结构，并补充交易域五张表。
 func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&dbmodel.OrderModel{})
+	if err := db.AutoMigrate(&dbmodel.OrderModel{}); err != nil {
+		return err
+	}
+	return updateTradeAutoMigrate(db)
 }
 
 // Save 新增或更新 order 聚合。
