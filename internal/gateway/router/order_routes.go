@@ -21,6 +21,8 @@ func registerOrderRoutes(v1 *gin.RouterGroup, orderHandler *handler.OrderHandler
 	// 模拟支付渠道回调：渠道侧无登录态，独立于鉴权路由。
 	pay := v1.Group("/pay")
 	pay.POST("/notify", orderHandler.PayNotify)
+	// 页面“模拟渠道支付”：买家触发，网关用服务端密钥签名后走正式回调链路。
+	pay.POST("/mock", auth, buyer, orderHandler.MockPayNotify)
 
 	// 商品：登录可见，运营可维护。
 	products := v1.Group("/products")

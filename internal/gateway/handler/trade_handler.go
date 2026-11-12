@@ -1,6 +1,14 @@
 package handler
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -128,6 +136,60 @@ func (h *OrderHandler) ApplyTradeRefund(c *gin.Context) {
 		return
 	}
 	h.log.Info("gateway refund applied", logFields(c, resp.GetId())...)
+	httpx.OK(c, resp)
+}
+
+// MockChannelSecret 是模拟渠道的默认共享密钥，需与订单服务 TRADE_CHANNEL_SECRET 一致。
+// 生产环境必须通过环境变量注入，绝不进入前端。
+const MockChannelSecret = "shop-mock-channel-secret"
+
+// signMockPayNotify 计算渠道回调签名，与订单服务 SignPayNotify 保持一致：
+// hex(HMAC-SHA256(secret, "trade_no|order_id|amount_cents"))。
+func signMockPayNotify(secret string, tradeNo string, orderID string, amountCents int64) string {
+	if secret == "" {
+		secret = MockChannelSecret
+	}
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(fmt.Sprintf("%s|%s|%d", tradeNo, orderID, amountCents)))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// MockPayNotify 处理 POST /api/v1/pay/mock：页面“模拟渠道支付”。
+// 网关以服务端密钥签名后调用正式回调链路，因此仍会完整走验签、幂等与异常分支。
+func (h *OrderHandler) MockPayNotify(c *gin.Context) {
+	var req request.MockPayRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpx.Error(c, apperrors.InvalidArgument("invalid_request", err.Error()))
+		return
+	}
+	claims := middleware.ClaimsFromContext(c)
+	order, err := h.client.GetTradeOrder(outgoingContext(c), &orderv1.GetTradeOrderRequest{Id: req.OrderID})
+	if err != nil {
+		httpx.Error(c, apperrors.FromGRPC(err))
+		return
+	}
+	// 买家只能为自己的订单发起支付，防止用他人订单号试探金额
+	if claims.Role == "buyer" && order.GetBuyerId() != claims.UserID {
+		httpx.Error(c, apperrors.New(apperrors.KindUnauthorized, "permission_denied", "越权拒绝：只能支付本人订单"))
+		return
+	}
+	tradeNo := strings.TrimSpace(req.ChannelTradeNo)
+	if tradeNo == "" {
+		tradeNo = fmt.Sprintf("CH-MOCK-%s-%d", order.GetId(), time.Now().UnixNano()%1_000_000)
+	}
+	secret := os.Getenv("TRADE_CHANNEL_SECRET")
+	resp, err := h.client.PayNotify(outgoingContext(c), &orderv1.PayNotifyRequest{
+		ChannelTradeNo: tradeNo,
+		OrderId:        order.GetId(),
+		AmountCents:    order.GetAmountCents(),
+		Signature:      signMockPayNotify(secret, tradeNo, order.GetId(), order.GetAmountCents()),
+	})
+	if err != nil {
+		httpx.Error(c, apperrors.FromGRPC(err))
+		return
+	}
+	h.log.Info("gateway mock pay notify proxied",
+		append(logFields(c, order.GetId()), zap.String("trade_no", tradeNo), zap.String("callback_code", resp.GetCode()))...)
 	httpx.OK(c, resp)
 }
 

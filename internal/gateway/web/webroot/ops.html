@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>运营核查 · SHOP-OS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f6df6'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>SHOP-OS <small>运营核查</small></div>
+    <nav class="nav">
+      <a href="/">总览</a>
+      <a href="/buyer.html">买家</a>
+      <a href="/warehouse.html">仓库</a>
+      <a href="/refund.html">客服·退款</a>
+      <a href="/exception.html">客服·异常</a>
+      <a href="/ops.html" class="active">运营</a>
+    </nav>
+    <div class="session" id="session"></div>
+  </header>
+
+  <div class="wrap">
+    <div id="loginPanel" class="login"></div>
+
+    <div id="main" hidden>
+      <div class="page-head">
+        <div>
+          <h1>交易核查</h1>
+          <p>已收款 = 支付流水合计；可售 + 预占 = 商品总量；状态分布与订单表一致。</p>
+        </div>
+        <button class="btn ghost" id="refreshBtn">刷新</button>
+      </div>
+
+      <div class="grid cols-5" id="metrics" style="margin-bottom:16px"></div>
+
+      <div class="split">
+        <div class="card">
+          <h2>订单检索</h2>
+          <div class="row" style="margin-bottom:12px">
+            <select id="statusFilter" style="flex:0 0 160px">
+              <option value="">全部状态</option>
+              <option>CREATED</option><option>PAID</option><option>REFUNDING</option>
+              <option>SHIPPED</option><option>CLOSED</option><option>REFUNDED</option>
+            </select>
+            <button class="btn" onclick="loadOrders()">查询</button>
+          </div>
+          <div id="orders"></div>
+        </div>
+
+        <div class="card">
+          <h2>渠道回调反查</h2>
+          <div class="field">
+            <label for="keyword">交易号 / 订单号关键字</label>
+            <input id="keyword" placeholder="CH-MOCK / SO..." />
+          </div>
+          <button class="btn" onclick="searchCallbacks()">查询</button>
+          <div id="callbackList" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2>商品维护</h2>
+        <div class="row" style="margin-bottom:14px">
+          <div class="field"><label>商品 ID</label><input id="pId" placeholder="P1" /></div>
+          <div class="field"><label>名称</label><input id="pName" placeholder="羊绒围巾" /></div>
+          <div class="field" style="flex:0 0 120px"><label>单价（分）</label><input id="pPrice" type="number" value="10000" /></div>
+          <div class="field" style="flex:0 0 110px"><label>可售数量</label><input id="pAvailable" type="number" value="5" /></div>
+          <div class="field" style="flex:0 0 110px"><label>状态</label>
+            <select id="pOnSale"><option value="true">在售</option><option value="false">下架</option></select>
+          </div>
+          <button class="btn primary" onclick="upsertProduct()">保存商品</button>
+        </div>
+        <div id="products"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    const { api, mount, toast, money, badge, escapeHTML } = Shop;
+    let s = { token: '', user: {} };
+    let productCache = [];
+
+    function metric(label, value, sub) {
+      return `<div class="card metric"><span class="label">${label}</span><span class="value">${value}</span><span class="sub">${sub || ''}</span></div>`;
+    }
+
+    async function loadSummary() {
+      const box = document.getElementById('metrics');
+      try {
+        const d = await api('/ops/summary', { token: s.token });
+        const statusRows = Object.entries(d.ordersByStatus || {})
+          .map(([k, v]) => `${badge(k)}<span class="mono">${v}</span>`).join(' &nbsp; ') || '<span class="hint">无订单</span>';
+        box.innerHTML = [
+          metric('已收款', money(d.paidTotalCents), '支付流水合计'),
+          metric('已退款', money(d.refundedTotalCents), '退款成功流水'),
+          metric('可售库存', d.availableTotal, '各商品 available 之和'),
+          metric('已预占', d.reservedTotal, '待支付订单占用件数'),
+          metric('待处理异常', d.exceptionPending, '需客服闭环')
+        ].join('') + `<div class="card" style="grid-column:1/-1"><h2>订单状态分布</h2><div class="row" style="gap:14px">${statusRows}</div></div>`;
+      } catch (err) {
+        box.innerHTML = `<div class="card"><div class="empty">汇总加载失败：${escapeHTML(err.message)}</div></div>`;
+      }
+    }
+
+    async function loadOrders() {
+      const box = document.getElementById('orders');
+      const status = document.getElementById('statusFilter').value;
+      try {
+        const data = await api('/ops/orders' + (status ? '?status=' + status : ''), { token: s.token });
+        const items = data.items || [];
+        box.innerHTML = items.length ? `<table>
+          <thead><tr><th>订单号</th><th>买家</th><th class="num">金额</th><th>状态</th><th>物流/说明</th></tr></thead>
+          <tbody>${items.map((o) => `<tr>
+            <td class="mono">${escapeHTML(o.id)}</td>
+            <td>${escapeHTML(o.buyerName || o.buyerId)}</td>
+            <td class="num">${money(o.amountCents)}</td>
+            <td>${badge(o.status)}</td>
+            <td>${o.carrier ? escapeHTML(o.carrier) + ' / ' + escapeHTML(o.trackingNo) : (o.closedReason ? escapeHTML(o.closedReason) : '<span class="hint">—</span>')}</td>
+          </tr>`).join('')}</tbody></table>` : '<div class="empty">没有符合条件的订单</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function searchCallbacks() {
+      const box = document.getElementById('callbackList');
+      const keyword = document.getElementById('keyword').value.trim();
+      try {
+        const data = await api('/ops/callbacks' + (keyword ? '?keyword=' + encodeURIComponent(keyword) : ''), { token: s.token });
+        const items = (data.items || []).slice(0, 10);
+        box.innerHTML = items.length ? `<table>
+          <thead><tr><th>渠道交易号</th><th>订单号</th><th class="num">状态</th><th class="num">命中</th></tr></thead>
+          <tbody>${items.map((c) => `<tr>
+            <td class="mono">${escapeHTML(c.tradeNo)}</td>
+            <td class="mono">${escapeHTML(c.orderId)}</td>
+            <td class="num">${badge(c.status)}</td>
+            <td class="num">${c.hits}</td>
+          </tr>`).join('')}</tbody></table>` : '<div class="empty">无回调记录</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function loadProducts() {
+      const box = document.getElementById('products');
+      try {
+        const data = await api('/products', { token: s.token });
+        productCache = data.items || [];
+        box.innerHTML = productCache.length ? `<table>
+          <thead><tr><th>ID</th><th>名称</th><th class="num">单价</th><th class="num">可售/总量</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>${productCache.map((p) => `<tr>
+            <td class="mono">${escapeHTML(p.id)}</td>
+            <td>${escapeHTML(p.name)}</td>
+            <td class="num">${money(p.priceCents)}</td>
+            <td class="num">${p.available} / ${p.total}</td>
+            <td>${badge(p.onSale === true)}</td>
+            <td><button class="btn sm" onclick="toggleSale('${escapeHTML(p.id)}')">${p.onSale ? '下架' : '上架'}</button></td>
+          </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无商品</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function upsertProduct() {
+      const body = {
+        id: document.getElementById('pId').value.trim(),
+        name: document.getElementById('pName').value.trim(),
+        price_cents: Number(document.getElementById('pPrice').value),
+        available: Number(document.getElementById('pAvailable').value),
+        on_sale: document.getElementById('pOnSale').value === 'true'
+      };
+      if (!body.id || !body.name) { toast('商品 ID 与名称必填', 'bad'); return; }
+      try {
+        const p = await api('/products', { method: 'POST', token: s.token, body });
+        toast(`已保存 ${p.id}：${p.onSale ? '在售' : '下架'}，可售 ${p.available}`, 'ok');
+        await Promise.all([loadProducts(), loadSummary()]);
+      } catch (err) {
+        toast('保存失败：' + err.message + (err.code ? '（' + err.code + '）' : ''), 'bad');
+      }
+    }
+
+    async function toggleSale(productId) {
+      const p = productCache.find((it) => it.id === productId);
+      if (!p) return;
+      try {
+        await api('/products', {
+          method: 'POST', token: s.token,
+          body: { id: p.id, name: p.name, price_cents: p.priceCents, available: p.available, on_sale: !p.onSale }
+        });
+        toast(`已${p.onSale ? '下架' : '上架'} ${p.id}`, 'ok');
+        await Promise.all([loadProducts(), loadSummary()]);
+      } catch (err) {
+        toast('操作失败：' + err.message, 'bad');
+      }
+    }
+
+    mount('ops', async (sess) => {
+      s = sess;
+      document.getElementById('refreshBtn').onclick = () => Promise.all([loadSummary(), loadOrders(), loadProducts(), searchCallbacks()]);
+      await Promise.all([loadSummary(), loadOrders(), loadProducts(), searchCallbacks()]);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SHOP-OS 交易后台 · 题目01</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f6df6'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>SHOP-OS 交易后台 <small>题目01 · 小型电商订单交易</small></div>
+    <nav class="nav">
+      <a href="/" class="active">总览</a>
+      <a href="/buyer.html">买家</a>
+      <a href="/warehouse.html">仓库</a>
+      <a href="/refund.html">客服·退款</a>
+      <a href="/exception.html">客服·异常</a>
+      <a href="/ops.html">运营</a>
+    </nav>
+    <div class="session"><span class="badge info">演示环境</span></div>
+  </header>
+
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <h1>五个可操作工作台</h1>
+        <p>页面直接调用真实网关接口 <span class="mono">/api/v1</span>，数据来自 MySQL 与订单服务，无本地假数据。</p>
+      </div>
+    </div>
+
+    <div class="grid cols-3">
+      <a class="card" href="/buyer.html" style="color:inherit">
+        <h2>① 买家工作台</h2>
+        <p class="hint">浏览在售商品、下单占库存、模拟渠道支付、取消订单、申请售前退款、查看台账时间线。</p>
+        <p style="margin:12px 0 0"><span class="badge info">buyer1 / buyer2</span></p>
+      </a>
+      <a class="card" href="/warehouse.html" style="color:inherit">
+        <h2>② 仓库工作台</h2>
+        <p class="hint">查看待发货订单、登记承运方与运单号；退款审核中订单会被服务端拒绝发货。</p>
+        <p style="margin:12px 0 0"><span class="badge info">warehouse01</span></p>
+      </a>
+      <a class="card" href="/refund.html" style="color:inherit">
+        <h2>③ 客服 · 退款审核</h2>
+        <p class="hint">同意退款（首次可触发渠道失败，重试成功）或填写原因驳回；重复审核幂等返回。</p>
+        <p style="margin:12px 0 0"><span class="badge info">support01</span></p>
+      </a>
+      <a class="card" href="/exception.html" style="color:inherit">
+        <h2>④ 客服 · 支付异常</h2>
+        <p class="hint">处置关单后到账、无主支付、金额不符、重复扣款、验签失败；按渠道交易号反查回调处理结果。</p>
+        <p style="margin:12px 0 0"><span class="badge info">support01</span></p>
+      </a>
+      <a class="card" href="/ops.html" style="color:inherit">
+        <h2>⑤ 运营核查</h2>
+        <p class="hint">收款/退款/可售/预占核对，商品上下架与调价，全量订单检索，回调反查支付去向。</p>
+        <p style="margin:12px 0 0"><span class="badge info">ops01</span></p>
+      </a>
+      <div class="card">
+        <h2>预置账号</h2>
+        <table>
+          <thead><tr><th>角色</th><th>账号</th><th>密码</th></tr></thead>
+          <tbody>
+            <tr><td>买家</td><td class="mono">buyer1 / buyer2 / buyer3</td><td class="mono">123456</td></tr>
+            <tr><td>仓库</td><td class="mono">warehouse01</td><td class="mono">123456</td></tr>
+            <tr><td>客服</td><td class="mono">support01</td><td class="mono">123456</td></tr>
+            <tr><td>运营</td><td class="mono">ops01</td><td class="mono">123456</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>六场景复现路径</h2>
+      <table>
+        <thead><tr><th>场景</th><th>页面操作</th></tr></thead>
+        <tbody>
+          <tr><td>S1 正常成交</td><td>买家下单 → 模拟渠道支付 → 仓库发货登记 → 买家查看运单</td></tr>
+          <tr><td>S2 缺货与弃单</td><td>买家连续下单直至缺货提示 → 取消未支付订单 → 库存回补后他人可下单</td></tr>
+          <tr><td>S3 售前退款</td><td>买家申请退款 → 仓库尝试发货被拒 → 客服审核同意（首次失败后重试）</td></tr>
+          <tr><td>S4 迟到支付</td><td>下单后等待超时关单（可用 <span class="mono">TRADE_KEEP_SECONDS</span> 缩短）→ 再点“再推一次”支付 → 客服异常处置</td></tr>
+          <tr><td>S5 操作竞争</td><td>两个买家/客服并发操作同一订单，仅一方生效；越权访问返回 401/403</td></tr>
+          <tr><td>S6 运营核查</td><td>运营工作台核对收款/退款/可售/预占与台账合计一致</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+</body>
+</html>

@@ -43,6 +43,13 @@ type PayNotifyRequest struct {
 	Signature      string `json:"signature"`
 }
 
+// MockPayRequest 是 POST /api/v1/pay/mock 的载荷：页面触发“模拟渠道支付”。
+// 签名由网关用共享密钥在服务端计算，浏览器不接触密钥。
+type MockPayRequest struct {
+	OrderID        string `json:"order_id" binding:"required"`
+	ChannelTradeNo string `json:"channel_trade_no"`
+}
+
 // ListTradeOrdersRequest 是订单列表查询参数。
 type ListTradeOrdersRequest struct {
 	Status  string `form:"status"`
