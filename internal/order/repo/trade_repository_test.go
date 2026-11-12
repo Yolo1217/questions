@@ -24,25 +24,32 @@ var (
 	repoImpl *GormRepository
 )
 
+// exitNoDB 在测试库不可用时退出：本地缺库静默跳过，CI 置 TRADE_REQUIRE_DB=1 时判失败，
+// 避免"连不上库也 0 退出"造成 CI 假绿。
+func exitNoDB(msg string, cause error) {
+	if os.Getenv("TRADE_REQUIRE_DB") == "1" {
+		fmt.Printf("db required but unavailable: %s: %v\n", msg, cause)
+		os.Exit(1)
+	}
+	fmt.Println("skip tests:", msg, cause)
+	os.Exit(0)
+}
+
 func TestMain(m *testing.M) {
 	server := "root:root@tcp(127.0.0.1:3306)/?charset=utf8mb4&parseTime=True&loc=Local"
 	bootstrap, err := gorm.Open(mysql.Open(server), &gorm.Config{Logger: gormlogger.Discard})
 	if err != nil {
-		fmt.Println("skip repo tests: mysql unavailable:", err)
-		os.Exit(0)
+		exitNoDB("repo tests: mysql unavailable", err)
 	}
 	if err := bootstrap.Exec("CREATE DATABASE IF NOT EXISTS questions_test_repo DEFAULT CHARACTER SET utf8mb4").Error; err != nil {
-		fmt.Println("skip repo tests: create test database failed:", err)
-		os.Exit(0)
+		exitNoDB("repo tests: create test database failed", err)
 	}
 	db, err := gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:3306)/questions_test_repo?charset=utf8mb4&parseTime=True&loc=Local"), &gorm.Config{Logger: gormlogger.Discard})
 	if err != nil {
-		fmt.Println("skip repo tests: mysql unavailable:", err)
-		os.Exit(0)
+		exitNoDB("repo tests: mysql unavailable", err)
 	}
 	if err := AutoMigrate(db); err != nil {
-		fmt.Println("skip repo tests: migrate failed:", err)
-		os.Exit(0)
+		exitNoDB("repo tests: migrate failed", err)
 	}
 	repoDB = db
 	repoImpl = NewGormRepository(db, zap.NewNop())

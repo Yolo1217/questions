@@ -26,24 +26,30 @@ var (
 	server    *Server
 )
 
+// exitNoDB 同 repo 包：CI 置 TRADE_REQUIRE_DB=1 时连不上库即失败，避免假绿。
+func exitNoDB(msg string, cause error) {
+	if os.Getenv("TRADE_REQUIRE_DB") == "1" {
+		fmt.Printf("db required but unavailable: %s: %v\n", msg, cause)
+		os.Exit(1)
+	}
+	fmt.Println("skip tests:", msg, cause)
+	os.Exit(0)
+}
+
 func TestMain(m *testing.M) {
 	bootstrap, err := gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:3306)/?charset=utf8mb4&parseTime=True&loc=Local"), &gorm.Config{Logger: gormlogger.Discard})
 	if err != nil {
-		fmt.Println("skip handler tests: mysql unavailable:", err)
-		os.Exit(0)
+		exitNoDB("handler tests: mysql unavailable", err)
 	}
 	if err := bootstrap.Exec("CREATE DATABASE IF NOT EXISTS questions_test_handler DEFAULT CHARACTER SET utf8mb4").Error; err != nil {
-		fmt.Println("skip handler tests: create test database failed:", err)
-		os.Exit(0)
+		exitNoDB("handler tests: create test database failed", err)
 	}
 	db, err := gorm.Open(mysql.Open("root:root@tcp(127.0.0.1:3306)/questions_test_handler?charset=utf8mb4&parseTime=True&loc=Local"), &gorm.Config{Logger: gormlogger.Discard})
 	if err != nil {
-		fmt.Println("skip handler tests: mysql unavailable:", err)
-		os.Exit(0)
+		exitNoDB("handler tests: mysql unavailable", err)
 	}
 	if err := repo.AutoMigrate(db); err != nil {
-		fmt.Println("skip handler tests: migrate failed:", err)
-		os.Exit(0)
+		exitNoDB("handler tests: migrate failed", err)
 	}
 	handlerDB = db
 	orderRepo := repo.NewGormRepository(db, zap.NewNop())

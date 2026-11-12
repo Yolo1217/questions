@@ -28,6 +28,16 @@ var (
 	testSvc  *TradeService
 )
 
+// exitNoDB 同 repo 包：CI 置 TRADE_REQUIRE_DB=1 时连不上库即失败，避免假绿。
+func exitNoDB(msg string, cause error) {
+	if os.Getenv("TRADE_REQUIRE_DB") == "1" {
+		fmt.Printf("db required but unavailable: %s: %v\n", msg, cause)
+		os.Exit(1)
+	}
+	fmt.Println("skip tests:", msg, cause)
+	os.Exit(0)
+}
+
 func TestMain(m *testing.M) {
 	// 默认使用独立测试库 questions_test，避免测试清表影响开发库 questions。
 	dsn := os.Getenv("TRADE_TEST_DSN")
@@ -46,12 +56,10 @@ func TestMain(m *testing.M) {
 	}
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: gormlogger.Discard})
 	if err != nil {
-		fmt.Println("skip trade tests: mysql unavailable:", err)
-		os.Exit(0)
+		exitNoDB("trade tests: mysql unavailable", err)
 	}
 	if err := repo.AutoMigrate(db); err != nil {
-		fmt.Println("skip trade tests: migrate failed:", err)
-		os.Exit(0)
+		exitNoDB("trade tests: migrate failed", err)
 	}
 	testDB = db
 	testRepo = repo.NewGormRepository(db, zap.NewNop())
