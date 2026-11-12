@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>仓库工作台 · SHOP-OS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f6df6'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>SHOP-OS <small>仓库工作台</small></div>
+    <nav class="nav">
+      <a href="/">总览</a>
+      <a href="/buyer.html">买家</a>
+      <a href="/warehouse.html" class="active">仓库</a>
+      <a href="/refund.html">客服·退款</a>
+      <a href="/exception.html">客服·异常</a>
+      <a href="/ops.html">运营</a>
+    </nav>
+    <div class="session" id="session"></div>
+  </header>
+
+  <div class="wrap">
+    <div id="loginPanel" class="login"></div>
+
+    <div id="main" hidden>
+      <div class="page-head">
+        <div>
+          <h1>待发货订单</h1>
+          <p>只有已支付且未申请退款的订单可发货；退款审核中会被服务端拒绝（<span class="mono">order_refunding</span>）。</p>
+        </div>
+        <button class="btn ghost" id="refreshBtn">刷新</button>
+      </div>
+
+      <div class="card">
+        <h2>发货登记</h2>
+        <div id="orders"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="drawer" id="drawer">
+    <header><h3 id="drawerTitle">订单详情</h3><button class="btn sm ghost" onclick="Shop.closeDrawer()">关闭</button></header>
+    <div class="body" id="drawerBody"></div>
+  </aside>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    const { api, mount, toast, money, badge, escapeHTML, openDrawer } = Shop;
+    const CARRIERS = ['顺丰速运', '京东物流', '中通快递'];
+    let s = { token: '', user: {} };
+
+    function row(o) {
+      const id = escapeHTML(o.id);
+      return `<tr>
+        <td class="mono">${id}</td>
+        <td>${escapeHTML(o.productName || o.productId)}<br><span class="hint">×${o.qty}</span></td>
+        <td class="num">${money(o.amountCents)}</td>
+        <td>${badge(o.status)}</td>
+        <td class="num">${escapeHTML(o.buyerName || o.buyerId)}</td>
+        <td>
+          <div class="row" style="gap:6px">
+            <select id="carrier-${id}" style="flex:0 0 116px">${CARRIERS.map((c) => `<option>${c}</option>`).join('')}</select>
+            <input id="tracking-${id}" placeholder="运单号" style="flex:1 1 120px" value="SF${Date.now().toString().slice(-8)}" />
+            <button class="btn primary sm" onclick="ship('${id}')">发货</button>
+            <button class="btn sm" onclick="showDetail('${id}')">详情</button>
+          </div>
+        </td>
+      </tr>`;
+    }
+
+    async function load() {
+      const box = document.getElementById('orders');
+      try {
+        const data = await api('/warehouse/orders', { token: s.token });
+        const items = data.items || [];
+        box.innerHTML = items.length ? `
+          <table>
+            <thead><tr><th>订单号</th><th>商品</th><th class="num">金额</th><th>状态</th><th class="num">买家</th><th>发货</th></tr></thead>
+            <tbody>${items.map(row).join('')}</tbody>
+          </table>` : '<div class="empty">暂无待发货订单</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function ship(orderId) {
+      const carrier = document.getElementById('carrier-' + orderId).value;
+      const trackingNo = document.getElementById('tracking-' + orderId).value.trim();
+      if (!carrier || !trackingNo) { toast('承运方与运单号必填', 'bad'); return; }
+      try {
+        const order = await api('/warehouse/orders/' + orderId + '/ship', {
+          method: 'POST', token: s.token, body: { carrier, tracking_no: trackingNo }
+        });
+        toast(`发货成功：${order.status} · ${order.carrier} ${order.trackingNo}`, 'ok');
+        load();
+      } catch (err) {
+        toast('发货失败：' + err.message + (err.code ? '（' + err.code + '）' : ''), 'bad');
+        load();
+      }
+    }
+
+    async function showDetail(orderId) {
+      try {
+        const o = await api('/trade/orders/' + orderId, { token: s.token });
+        const ledgers = (o.ledgers || []).map((l) => `
+          <div class="item" data-kind="${escapeHTML(l.kind)}">
+            <span class="dot"></span>
+            <div><div class="text">${escapeHTML(l.text)}</div>
+            <div class="meta">${escapeHTML(l.time)}${l.status ? ' · ' + escapeHTML(l.status) : ''}</div></div>
+          </div>`).join('') || '<div class="empty">暂无台账</div>';
+        openDrawer('订单 ' + o.id, `
+          <dl class="kv">
+            <dt>状态</dt><dd>${badge(o.status)}</dd>
+            <dt>买家</dt><dd>${escapeHTML(o.buyerName)}（${escapeHTML(o.buyerId)}）</dd>
+            <dt>商品</dt><dd>${escapeHTML(o.productName)} ×${o.qty}</dd>
+            <dt>金额</dt><dd>${money(o.amountCents)}</dd>
+            <dt>下单</dt><dd>${escapeHTML(o.createdAt)}</dd>
+            ${o.paidAt ? `<dt>支付</dt><dd>${escapeHTML(o.paidAt)}</dd>` : ''}
+            ${o.carrier ? `<dt>物流</dt><dd>${escapeHTML(o.carrier)} / ${escapeHTML(o.trackingNo)}</dd>` : ''}
+          </dl>
+          <h3 style="margin:18px 0 10px">台账时间线</h3>
+          <div class="timeline">${ledgers}</div>`);
+      } catch (err) {
+        toast('详情加载失败：' + err.message, 'bad');
+      }
+    }
+
+    mount('warehouse', async (sess) => {
+      s = sess;
+      document.getElementById('refreshBtn').onclick = load;
+      await load();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+# 题目01 容器化专用配置：DSN 与 gRPC target 指向 compose 网络内的服务名。
+# 挂载为各容器的 /app/configs/config.yaml（见 docker-compose.trade.yml）。
+app:
+  name: xiaolanshu
+  env: docker
+
+http:
+  host: 0.0.0.0
+  port: 8080
+  read_timeout_seconds: 5
+  write_timeout_seconds: 10
+
+grpc:
+  host: 0.0.0.0
+
+services:
+  gateway:
+    name: gateway
+  user:
+    name: user-service
+    port: 9001
+    target: user:9001
+  note:
+    name: note-service
+    port: 9002
+    target: note:9002
+  order:
+    name: order-service
+    port: 9100
+    target: order:9100
+
+database:
+  driver: mysql
+  dsn: "root:root@tcp(mysql:3306)/questions?charset=utf8mb4&parseTime=True&loc=Local"
+
+mysql:
+  dsn: "root:root@tcp(mysql:3306)/questions?charset=utf8mb4&parseTime=True&loc=Local"
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime_seconds: 3600
+
+postgresql:
+  dsn: ""
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime_seconds: 3600
+
+mongodb:
+  uri: mongodb://mongo:27017
+  username: ""
+  password: ""
+  database: xiaolanshu
+  app_name: bw-cli
+  min_pool_size: 0
+  max_pool_size: 100
+  connect_timeout_seconds: 10
+  server_selection_timeout_seconds: 5
+
+file_storage:
+  provider: minio
+  max_size_mb: 100
+  object_prefix: uploads
+  public_base_url: ""
+
+redis:
+  addr: redis:6379
+  username: ""
+  password: ""
+  db: 0
+  pool_size: 10
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s
+  lock:
+    key_prefix: xiaolanshu
+    default_ttl: 30s
+
+elasticsearch:
+  addresses:
+    - http://elasticsearch:9200
+  username: ""
+  password: ""
+
+kafka:
+  brokers:
+    - kafka:9092
+  topic: xiaolanshu-events
+  group_id: xiaolanshu-consumer
+  client_id: xiaolanshu
+
+rocketmq:
+  name_servers:
+    - rocketmq:9876
+  group_name: xiaolanshu-producer
+  consumer_group: xiaolanshu-consumer
+
+alipay:
+  app_id: ""
+  private_key: ""
+  alipay_public_key: ""
+  production: false
+
+middleware:
+  cors:
+    allow_origins:
+      - "*"
+    allow_methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allow_headers:
+      - Origin
+      - Content-Type
+      - Authorization
+      - X-Request-ID
+    allow_credentials: false
+  jwt:
+    secret: "docker-demo-secret-please-change"
+    issuer: xiaolanshu
+    expire_seconds: 7200
+
+log:
+  service: xiaolanshu
+  environment: docker
+  level: info
+  encoding: json
+  file:
+    enabled: false
+    filename: logs/app.log
+    max_size_mb: 128
+    max_backups: 14
+    max_age_days: 7
+    compress: true

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>买家工作台 · SHOP-OS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f6df6'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>SHOP-OS <small>买家工作台</small></div>
+    <nav class="nav">
+      <a href="/">总览</a>
+      <a href="/buyer.html" class="active">买家</a>
+      <a href="/warehouse.html">仓库</a>
+      <a href="/refund.html">客服·退款</a>
+      <a href="/exception.html">客服·异常</a>
+      <a href="/ops.html">运营</a>
+    </nav>
+    <div class="session" id="session"></div>
+  </header>
+
+  <div class="wrap">
+    <div id="loginPanel" class="login"></div>
+
+    <div id="main" hidden>
+      <div class="page-head">
+        <div>
+          <h1>商品与我的订单</h1>
+          <p>下单即预占库存；支付走模拟渠道（服务端签名，前端不持有密钥）。</p>
+        </div>
+        <button class="btn ghost" id="refreshBtn">刷新</button>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h2>在售商品</h2>
+        <div class="products" id="products"></div>
+      </div>
+
+      <div class="card">
+        <h2>我的订单</h2>
+        <div id="orders"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="drawer" id="drawer">
+    <header>
+      <h3 id="drawerTitle">订单详情</h3>
+      <button class="btn sm ghost" onclick="Shop.closeDrawer()">关闭</button>
+    </header>
+    <div class="body" id="drawerBody"></div>
+  </aside>
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    const { api, mount, toast, money, badge, escapeHTML, openDrawer } = Shop;
+    let s = { token: '', user: {} };
+
+    function productCard(p) {
+      const disabled = !p.onSale || p.available <= 0;
+      return `
+        <div class="product">
+          <div class="meta"><span class="mono">${escapeHTML(p.id)}</span>${badge(p.onSale === true)}</div>
+          <div class="name">${escapeHTML(p.name)}</div>
+          <div class="price">${money(p.priceCents)}</div>
+          <div class="meta"><span>可售 ${p.available} 件</span><span>总入库 ${p.total}</span></div>
+          <div class="row" style="margin-top:auto">
+            <select id="qty-${escapeHTML(p.id)}" ${disabled ? 'disabled' : ''} style="flex:0 0 92px">
+              <option value="1">1 件</option>
+              <option value="2">2 件</option>
+            </select>
+            <button class="btn primary" ${disabled ? 'disabled' : ''} onclick="placeOrder('${escapeHTML(p.id)}')">
+              ${disabled ? (p.onSale ? '库存不足' : '已下架') : '立即下单'}
+            </button>
+          </div>
+        </div>`;
+    }
+
+    async function loadProducts() {
+      const box = document.getElementById('products');
+      try {
+        const data = await api('/products', { token: s.token });
+        const items = data.items || [];
+        box.innerHTML = items.length ? items.map(productCard).join('') : '<div class="empty">暂无商品</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function placeOrder(productId) {
+      const qty = Number(document.getElementById('qty-' + productId).value || 1);
+      try {
+        const order = await api('/trade/orders', { method: 'POST', token: s.token, body: { product_id: productId, qty } });
+        toast(`下单成功 ${order.id}，金额 ${money(order.amountCents)}，请在 10 分钟内支付`, 'ok');
+        await Promise.all([loadProducts(), loadOrders()]);
+      } catch (err) {
+        toast('下单失败：' + err.message, 'bad');
+        loadProducts();
+      }
+    }
+
+    function orderRow(o) {
+      const canPay = o.status === 'CREATED';
+      const canCancel = o.status === 'CREATED';
+      const canRefund = o.status === 'PAID' || o.status === 'SHIPPED' ? o.status === 'PAID' : false;
+      const actions = [
+        `<button class="btn sm" onclick="showDetail('${o.id}')">详情</button>`,
+        canPay ? `<button class="btn sm primary" onclick="mockPay('${o.id}', false)">模拟支付</button>` : '',
+        canPay ? `<button class="btn sm" onclick="mockPay('${o.id}', true)">再推一次</button>` : '',
+        canCancel ? `<button class="btn sm" onclick="cancelOrder('${o.id}')">取消</button>` : '',
+        canRefund ? `<button class="btn sm" onclick="applyRefund('${o.id}')">申请退款</button>` : ''
+      ].filter(Boolean).join('');
+
+      const extra = [
+        o.carrier ? `承运 ${escapeHTML(o.carrier)} / ${escapeHTML(o.trackingNo || '')}` : '',
+        o.closedReason ? `关闭原因：${escapeHTML(o.closedReason)}` : '',
+        o.rejectReason ? `驳回原因：${escapeHTML(o.rejectReason)}` : ''
+      ].filter(Boolean).join('<br>');
+
+      return `<tr>
+        <td class="mono">${escapeHTML(o.id)}</td>
+        <td>${escapeHTML(o.productName || o.productId)}<br><span class="hint">×${o.qty}</span></td>
+        <td class="num">${money(o.amountCents)}</td>
+        <td>${badge(o.status)}</td>
+        <td>${extra || '<span class="hint">—</span>'}</td>
+        <td><div class="actions">${actions}</div></td>
+      </tr>`;
+    }
+
+    async function loadOrders() {
+      const box = document.getElementById('orders');
+      try {
+        const data = await api('/trade/orders/mine', { token: s.token });
+        const items = data.items || [];
+        box.innerHTML = items.length ? `
+          <table>
+            <thead><tr><th>订单号</th><th>商品</th><th class="num">金额</th><th>状态</th><th>物流 / 说明</th><th>操作</th></tr></thead>
+            <tbody>${items.map(orderRow).join('')}</tbody>
+          </table>` : '<div class="empty">还没有订单，先在上方下单</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function mockPay(orderId, duplicate) {
+      try {
+        // 同一订单固定复用一个渠道交易号：再次点击即“渠道重推”，用于演示幂等与迟到支付
+        const result = await api('/pay/mock', {
+          method: 'POST', token: s.token,
+          body: { order_id: orderId, channel_trade_no: 'CH-UI-' + orderId }
+        });
+        const label = result.success ? (result.duplicate ? '重复通知已幂等处理' : '支付入账成功') : '渠道返回失败';
+        toast(`${label}：code=${result.code}${result.message ? ' · ' + result.message : ''}`, result.success ? 'ok' : 'bad');
+        await Promise.all([loadProducts(), loadOrders()]);
+        if (document.getElementById('drawer').classList.contains('open')) showDetail(orderId);
+      } catch (err) {
+        toast('支付请求异常：' + err.message, 'bad');
+      }
+    }
+
+    async function cancelOrder(orderId) {
+      if (!confirm('确认取消该订单？取消后库存立即释放。')) return;
+      try {
+        await api('/trade/orders/' + orderId + '/cancel', { method: 'POST', token: s.token });
+        toast('已取消，库存已释放', 'ok');
+        await Promise.all([loadProducts(), loadOrders()]);
+      } catch (err) {
+        toast('取消失败：' + err.message, 'bad');
+      }
+    }
+
+    async function applyRefund(orderId) {
+      if (!confirm('确认申请售前退款？申请后仓库将暂停发货。')) return;
+      try {
+        await api('/trade/orders/' + orderId + '/refund', { method: 'POST', token: s.token });
+        toast('已提交退款申请，等待客服审核', 'ok');
+        await loadOrders();
+      } catch (err) {
+        toast('申请失败：' + err.message, 'bad');
+      }
+    }
+
+    async function showDetail(orderId) {
+      try {
+        const o = await api('/trade/orders/' + orderId, { token: s.token });
+        const ledgers = (o.ledgers || []).map((l) => `
+          <div class="item" data-kind="${escapeHTML(l.kind)}">
+            <span class="dot"></span>
+            <div>
+              <div class="text">${escapeHTML(l.text)} ${l.amountCents ? `<strong>${money(l.amountCents)}</strong>` : ''}</div>
+              <div class="meta">${escapeHTML(l.kind)} · ${escapeHTML(l.time)}${l.status ? ' · ' + escapeHTML(l.status) : ''}${l.tradeNo ? ' · ' + escapeHTML(l.tradeNo) : ''}</div>
+            </div>
+          </div>`).join('') || '<div class="empty">暂无台账</div>';
+        openDrawer('订单 ' + o.id, `
+          <dl class="kv">
+            <dt>状态</dt><dd>${badge(o.status)}</dd>
+            <dt>商品</dt><dd>${escapeHTML(o.productName)} ×${o.qty}</dd>
+            <dt>金额</dt><dd>${money(o.amountCents)}（单价 ${money(o.priceCents)}）</dd>
+            <dt>下单时间</dt><dd>${escapeHTML(o.createdAt)}</dd>
+            <dt>支付截止</dt><dd>${escapeHTML(o.deadline || '—')}</dd>
+            ${o.paidAt ? `<dt>支付时间</dt><dd>${escapeHTML(o.paidAt)}</dd>` : ''}
+            ${o.carrier ? `<dt>物流</dt><dd>${escapeHTML(o.carrier)} / ${escapeHTML(o.trackingNo)}</dd>` : ''}
+            ${o.closedReason ? `<dt>关闭原因</dt><dd>${escapeHTML(o.closedReason)}</dd>` : ''}
+            ${o.rejectReason ? `<dt>驳回原因</dt><dd>${escapeHTML(o.rejectReason)}</dd>` : ''}
+          </dl>
+          <h3 style="margin:18px 0 10px">台账时间线</h3>
+          <div class="timeline">${ledgers}</div>`);
+      } catch (err) {
+        toast('详情加载失败：' + err.message, 'bad');
+      }
+    }
+
+    mount('buyer', async (sess) => {
+      s = sess;
+      document.getElementById('refreshBtn').onclick = () => Promise.all([loadProducts(), loadOrders()]);
+      await Promise.all([loadProducts(), loadOrders()]);
+    });
+  </script>
+</body>
+</html>

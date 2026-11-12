@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>客服 · 支付异常 · SHOP-OS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f6df6'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>SHOP-OS <small>客服 · 支付异常</small></div>
+    <nav class="nav">
+      <a href="/">总览</a>
+      <a href="/buyer.html">买家</a>
+      <a href="/warehouse.html">仓库</a>
+      <a href="/refund.html">客服·退款</a>
+      <a href="/exception.html" class="active">客服·异常</a>
+      <a href="/ops.html">运营</a>
+    </nav>
+    <div class="session" id="session"></div>
+  </header>
+
+  <div class="wrap">
+    <div id="loginPanel" class="login"></div>
+
+    <div id="main" hidden>
+      <div class="page-head">
+        <div>
+          <h1>支付异常处置</h1>
+          <p>异常按渠道交易号登记：关单后到账、无主支付、金额不符、重复扣款、验签失败。动作与原因均留痕，闭环后不可再改。</p>
+        </div>
+        <div class="row">
+          <select id="filter" style="width:120px">
+            <option value="true">仅待处理</option>
+            <option value="false">全部</option>
+          </select>
+          <button class="btn ghost" id="refreshBtn">刷新</button>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h2>异常工单</h2>
+          <div id="exceptions"></div>
+        </div>
+
+        <div class="card">
+          <h2>渠道回调反查</h2>
+          <div class="field">
+            <label for="tradeNo">渠道交易号 / 订单号</label>
+            <input id="tradeNo" placeholder="如 CH-MOCK-xxx 或 SO..." />
+          </div>
+          <div class="row">
+            <button class="btn primary" onclick="lookup()">查询处理结果</button>
+            <button class="btn ghost" onclick="listCallbacks()">列出最近回调</button>
+          </div>
+          <div id="callbackResult" style="margin-top:14px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/assets/app.js"></script>
+  <script>
+    const { api, mount, toast, money, badge, escapeHTML } = Shop;
+    let s = { token: '', user: {} };
+
+    function actionButtons(ex) {
+      const id = escapeHTML(ex.id);
+      const closed = ex.status === '已闭环';
+      if (closed) return '<span class="hint">已闭环，不可再处置</span>';
+      return `<div class="row" style="gap:6px">
+        <input id="reason-${id}" placeholder="处置原因（必填）" style="flex:1 1 150px" />
+        <button class="btn sm primary" onclick="handle('${id}', 'refund')">退款</button>
+        <button class="btn sm" onclick="handle('${id}', 'verify')">核实</button>
+        <button class="btn sm danger" onclick="handle('${id}', 'ignore')">忽略</button>
+      </div>`;
+    }
+
+    function row(ex) {
+      const diff = ex.channelAmountCents >= 0 && ex.systemAmountCents >= 0
+        ? `渠道 ${money(ex.channelAmountCents)} / 系统 ${money(ex.systemAmountCents)}`
+        : `渠道 ${money(ex.channelAmountCents)}<br><span class="hint">无对应订单</span>`;
+      return `<tr>
+        <td><span class="badge warn">${escapeHTML(ex.type)}</span><br><span class="hint mono">${escapeHTML(ex.id)}</span></td>
+        <td class="mono">${escapeHTML(ex.orderId || '—')}<br><span class="hint">${escapeHTML(ex.tradeNo || '')}</span></td>
+        <td>${diff}</td>
+        <td>${badge(ex.status)}${ex.result ? `<br><span class="hint">${escapeHTML(ex.result)}</span>` : ''}</td>
+        <td>${actionButtons(ex)}</td>
+      </tr>`;
+    }
+
+    async function load() {
+      const box = document.getElementById('exceptions');
+      const onlyPending = document.getElementById('filter').value === 'true';
+      try {
+        const data = await api('/cs/exceptions?only_pending=' + onlyPending, { token: s.token });
+        const items = data.items || [];
+        box.innerHTML = items.length ? `
+          <table>
+            <thead><tr><th>类型</th><th>订单 / 渠道交易号</th><th>金额比对</th><th>状态</th><th>处置</th></tr></thead>
+            <tbody>${items.map(row).join('')}</tbody>
+          </table>` : '<div class="empty">没有异常工单</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function handle(exceptionId, action) {
+      const reason = document.getElementById('reason-' + exceptionId).value.trim();
+      if (!reason) { toast('处置原因必填', 'bad'); return; }
+      try {
+        const ex = await api('/cs/exceptions/' + exceptionId + '/handle', {
+          method: 'POST', token: s.token, body: { action, reason }
+        });
+        toast(`处置完成：${ex.status}${ex.result ? ' · ' + ex.result : ''}`, 'ok');
+        await load();
+      } catch (err) {
+        toast('处置失败：' + err.message + (err.code ? '（' + err.code + '）' : ''), 'bad');
+      }
+    }
+
+    function callbackCard(c) {
+      return `<dl class="kv">
+        <dt>渠道交易号</dt><dd class="mono">${escapeHTML(c.tradeNo)}</dd>
+        <dt>订单号</dt><dd class="mono">${escapeHTML(c.orderId)}</dd>
+        <dt>金额</dt><dd>${money(c.amountCents)}</dd>
+        <dt>状态</dt><dd>${badge(c.status)}（命中 ${c.hits} 次）</dd>
+        <dt>关联异常</dt><dd>${c.exceptionType ? escapeHTML(c.exceptionType) + ' / ' + escapeHTML(c.exceptionStatus) : '<span class="hint">无</span>'}</dd>
+        <dt>首末更新</dt><dd>${escapeHTML(c.createdAt)} → ${escapeHTML(c.updatedAt)}</dd>
+      </dl>`;
+    }
+
+    async function lookup() {
+      const tradeNo = document.getElementById('tradeNo').value.trim();
+      const box = document.getElementById('callbackResult');
+      if (!tradeNo) { toast('请输入渠道交易号', 'bad'); return; }
+      try {
+        const data = await api('/cs/callbacks/' + encodeURIComponent(tradeNo), { token: s.token });
+        box.innerHTML = callbackCard(data);
+      } catch (err) {
+        box.innerHTML = `<div class="empty">未查到：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    async function listCallbacks() {
+      const box = document.getElementById('callbackResult');
+      try {
+        const data = await api('/cs/callbacks', { token: s.token });
+        const items = (data.items || []).slice(0, 8);
+        box.innerHTML = items.length ? `<table>
+          <thead><tr><th>渠道交易号</th><th>状态</th><th class="num">命中</th></tr></thead>
+          <tbody>${items.map((c) => `<tr>
+            <td class="mono">${escapeHTML(c.tradeNo)}</td>
+            <td>${badge(c.status)}</td>
+            <td class="num">${c.hits}</td>
+          </tr>`).join('')}</tbody></table>` : '<div class="empty">暂无回调记录</div>';
+      } catch (err) {
+        box.innerHTML = `<div class="empty">加载失败：${escapeHTML(err.message)}</div>`;
+      }
+    }
+
+    mount('cs', async (sess) => {
+      s = sess;
+      document.getElementById('refreshBtn').onclick = load;
+      document.getElementById('filter').onchange = load;
+      await load();
+    });
+  </script>
+</body>
+</html>

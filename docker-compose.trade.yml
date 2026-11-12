@@ -1,0 +1,78 @@
+# 题目01 一键部署编排：MySQL + 用户服务 + 订单服务 + 网关（含内嵌页面）。
+# 用法：
+#   GATEWAY_PORT=18080 docker compose -f docker-compose.trade.yml up -d --build
+#   bash scripts/smoke-http.sh            # Linux/macOS 冒烟
+#   powershell scripts\smoke-pages.ps1 -BaseUrl http://127.0.0.1:18080  # Windows 冒烟
+#   docker compose -f docker-compose.trade.yml down -v
+x-build: &trade-build
+  context: .
+  args:
+    # 镜像内 go mod download 走哪个代理：国内默认 goproxy.cn，CI 用官方代理
+    GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: questions
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_trade_data:/var/lib/mysql
+    healthcheck:
+      # mysqladmin ping 在初始化建库阶段也会返回存活，必须用真实查询探活
+      test: ["CMD-SHELL", "mysql -uroot -proot -e 'SELECT 1'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+
+  user:
+    build: *trade-build
+    command: ["/app/user"]
+    restart: on-failure
+    volumes:
+      - ./configs/config.docker.yaml:/app/configs/config.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "9001:9001"
+
+  order:
+    build: *trade-build
+    command: ["/app/order"]
+    restart: on-failure
+    environment:
+      # 交易域策略：渠道共享密钥、保留期 10 分钟、渠道退款首次失败（演示重试闭环）
+      TRADE_CHANNEL_SECRET: shop-mock-channel-secret
+      TRADE_KEEP_SECONDS: "600"
+      TRADE_REFUND_FAIL_FIRST: "1"
+    volumes:
+      - ./configs/config.docker.yaml:/app/configs/config.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "9100:9100"
+
+  gateway:
+    build: *trade-build
+    command: ["/app/gateway"]
+    restart: on-failure
+    volumes:
+      - ./configs/config.docker.yaml:/app/configs/config.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      user:
+        condition: service_started
+      order:
+        condition: service_started
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+
+volumes:
+  mysql_trade_data:

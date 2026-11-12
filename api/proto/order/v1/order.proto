@@ -1,0 +1,294 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/BwCloudWeGo/bw-cli/api/gen/order/v1;orderv1";
+
+// OrderService 是订单交易业务的 gRPC 边界。
+// 前 5 个 RPC 为脚手架默认 CRUD；其余为题目01（小型电商订单交易/发货/售前退款）业务接口。
+service OrderService {
+  // ===== 脚手架默认 CRUD =====
+  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (OrderResponse);
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  rpc UpdateOrder(UpdateOrderRequest) returns (OrderResponse);
+  rpc DeleteOrder(DeleteOrderRequest) returns (DeleteOrderResponse);
+
+  // ===== 商品与库存 =====
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc UpsertProduct(UpsertProductRequest) returns (ProductResponse);
+
+  // ===== 买家 =====
+  rpc PlaceOrder(PlaceOrderRequest) returns (OrderDetailResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (OrderDetailResponse);
+  rpc ListMyOrders(ListMyOrdersRequest) returns (ListTradeOrdersResponse);
+  rpc ApplyRefund(ApplyRefundRequest) returns (OrderDetailResponse);
+
+  // ===== 查询 =====
+  rpc GetTradeOrder(GetTradeOrderRequest) returns (OrderDetailResponse);
+  rpc ListOrdersByStatus(ListOrdersByStatusRequest) returns (ListTradeOrdersResponse);
+
+  // ===== 支付回调（模拟渠道异步通知，固定六步 + 幂等三道防线） =====
+  rpc PayNotify(PayNotifyRequest) returns (PayNotifyResponse);
+  // 渠道流水号反查：金额不符 / 未知订单 / 验签失败均可用渠道交易号查处理结果
+  rpc GetPayCallback(GetPayCallbackRequest) returns (PayCallbackResponse);
+  rpc ListPayCallbacks(ListPayCallbacksRequest) returns (ListPayCallbacksResponse);
+
+  // ===== 客服 =====
+  rpc AuditRefund(AuditRefundRequest) returns (AuditRefundResponse);
+  rpc ListExceptionPays(ListExceptionPaysRequest) returns (ListExceptionPaysResponse);
+  rpc HandleExceptionPay(HandleExceptionPayRequest) returns (ExceptionPayResponse);
+
+  // ===== 仓库 =====
+  rpc ShipOrder(ShipOrderRequest) returns (OrderDetailResponse);
+
+  // ===== 运营 =====
+  rpc TradeSummary(TradeSummaryRequest) returns (TradeSummaryResponse);
+}
+
+// ===== 脚手架默认消息 =====
+
+message CreateOrderRequest {
+  string name = 1;
+  string description = 2;
+}
+
+message GetOrderRequest {
+  string id = 1;
+}
+
+message ListOrdersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message UpdateOrderRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+message DeleteOrderRequest {
+  string id = 1;
+}
+
+message OrderResponse {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string created_at = 4;
+  string updated_at = 5;
+}
+
+message ListOrdersResponse {
+  repeated OrderResponse items = 1;
+  int64 total = 2;
+}
+
+message DeleteOrderResponse {
+  bool success = 1;
+}
+
+// ===== 商品与库存 =====
+
+message ListProductsRequest {}
+
+message ProductResponse {
+  string id = 1;
+  string name = 2;
+  int64 price_cents = 3;
+  int32 available = 4;
+  int32 total = 5;
+  bool on_sale = 6;
+}
+
+message ListProductsResponse {
+  repeated ProductResponse items = 1;
+}
+
+message UpsertProductRequest {
+  string id = 1;
+  string name = 2;
+  int64 price_cents = 3;
+  int32 available = 4;
+  bool on_sale = 5;
+}
+
+// ===== 买家 =====
+
+message PlaceOrderRequest {
+  string buyer_id = 1;
+  string buyer_name = 2;
+  string product_id = 3;
+  int32 qty = 4;
+}
+
+message CancelOrderRequest {
+  string order_id = 1;
+  string buyer_id = 2;
+}
+
+message ApplyRefundRequest {
+  string order_id = 1;
+  string buyer_id = 2;
+}
+
+message ListMyOrdersRequest {
+  string buyer_id = 1;
+}
+
+// ===== 查询 =====
+
+message GetTradeOrderRequest {
+  string id = 1;
+}
+
+message ListOrdersByStatusRequest {
+  string status = 1;
+  string buyer_id = 2;
+}
+
+// ===== 订单详情（含四类记录时间线） =====
+
+message LedgerEntry {
+  string kind = 1;      // stock | pay | refund | ship | exception
+  string time = 2;
+  string text = 3;
+  int64 amount_cents = 4;
+  string trade_no = 5;
+  string status = 6;    // 附加状态（如异常 待处理/已闭环、退款 成功/失败）
+}
+
+message OrderDetailResponse {
+  string id = 1;
+  string buyer_id = 2;
+  string buyer_name = 3;
+  string product_id = 4;
+  string product_name = 5;
+  int32 qty = 6;
+  int64 price_cents = 7;
+  int64 amount_cents = 8;
+  string status = 9;
+  string created_at = 10;
+  string deadline = 11;
+  string paid_at = 12;
+  string closed_reason = 13;
+  string carrier = 14;
+  string tracking_no = 15;
+  string reject_reason = 16;
+  bool refund_fail = 17;
+  repeated LedgerEntry ledgers = 18;
+}
+
+message ListTradeOrdersResponse {
+  repeated OrderDetailResponse items = 1;
+  int64 total = 2;
+}
+
+// ===== 支付回调 =====
+
+message PayNotifyRequest {
+  string channel_trade_no = 1;
+  string order_id = 2;
+  int64 amount_cents = 3;
+  // HMAC-SHA256(channel_secret, "channel_trade_no|order_id|amount_cents") 的十六进制小写值。
+  // 服务端自行计算比对，不信任调用方任何"已验签"声明；为空或不匹配一律判验签失败。
+  string signature = 4;
+}
+
+message PayNotifyResponse {
+  bool success = 1;
+  string code = 2;      // success | duplicate | verify_failed | order_not_found | amount_mismatch
+  string message = 3;
+  bool duplicate = 4;
+}
+
+message PayCallbackResponse {
+  string trade_no = 1;
+  string order_id = 2;
+  int64 amount_cents = 3;
+  string status = 4;          // RECEIVED | DONE | FAILED
+  int32 hits = 5;
+  string created_at = 6;
+  string updated_at = 7;
+  string exception_type = 8;  // 关联异常类型（无则空）
+  string exception_status = 9;
+}
+
+message GetPayCallbackRequest {
+  string trade_no = 1;
+}
+
+message ListPayCallbacksRequest {
+  string keyword = 1;   // 渠道交易号 / 订单号模糊匹配
+  string status = 2;    // RECEIVED | DONE | FAILED（空为全部）
+}
+
+message ListPayCallbacksResponse {
+  repeated PayCallbackResponse items = 1;
+}
+
+// ===== 客服 =====
+
+message AuditRefundRequest {
+  string order_id = 1;
+  bool approve = 2;
+  string reason = 3;
+  string operator = 4;
+}
+
+message AuditRefundResponse {
+  OrderDetailResponse order = 1;
+  bool duplicate = 2;   // 重复提交/重复退款通知：幂等返回成功，不重复打款、不回补库存
+  string message = 3;
+}
+
+message ExceptionPayResponse {
+  string id = 1;
+  string type = 2;             // 关单后到账 | 无主支付 | 金额不符 | 重复扣款 | 验签失败
+  string order_id = 3;
+  string trade_no = 4;
+  int64 channel_amount_cents = 5;
+  int64 system_amount_cents = 6;
+  string status = 7;           // 待处理 | 已闭环
+  string handler = 8;
+  string result = 9;
+  string created_at = 10;
+}
+
+message ListExceptionPaysRequest {
+  bool only_pending = 1;
+}
+
+message ListExceptionPaysResponse {
+  repeated ExceptionPayResponse items = 1;
+}
+
+message HandleExceptionPayRequest {
+  string exception_id = 1;
+  string action = 2;           // refund | verify | ignore
+  string reason = 3;
+  string operator = 4;
+}
+
+// ===== 仓库 =====
+
+message ShipOrderRequest {
+  string order_id = 1;
+  string carrier = 2;
+  string tracking_no = 3;
+  string operator = 4;
+}
+
+// ===== 运营 =====
+
+message TradeSummaryRequest {}
+
+message TradeSummaryResponse {
+  int64 paid_total_cents = 1;
+  int64 refunded_total_cents = 2;
+  int32 available_total = 3;
+  int32 exception_pending = 4;
+  map<string, int32> orders_by_status = 5;
+  int32 reserved_total = 6;   // 待支付订单已预占件数，用于核对"可售 + 预占"
+}
