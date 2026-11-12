@@ -135,14 +135,22 @@ $exceptions = Get-Api "/api/v1/cs/exceptions?only_pending=true" $cs
 if ($exceptions.items.Count -ge 1) { Ok "待处理异常 $($exceptions.items.Count) 条（类型 $($exceptions.items[0].type)）" } else { Bad "异常列表为空" }
 $target = $exceptions.items[0]
 
+# 验签前置语义：伪造流水号不落回调表（不占用渠道流水号），证据在异常表
+try {
+    $null = Get-Api "/api/v1/cs/callbacks/$badTradeNo" $cs
+    Bad "伪造流水号不应出现在回调表"
+} catch {
+    Ok "伪造流水号未落回调表（异常表留痕，可反查）"
+}
+
 $blank = Post-Api "/api/v1/cs/exceptions/$($target.id)/handle" $cs @{ action = "ignore"; reason = " " }
 if ($blank.error) { Ok "空原因被拒 code=$($blank.error.code)" } else { Bad "空原因未被拒" }
 
 $closed = (Post-Api "/api/v1/cs/exceptions/$($target.id)/handle" $cs @{ action = "ignore"; reason = "渠道确认误报" }).data
 if ($closed.status -eq "已闭环") { Ok "处置闭环：$($closed.result)" } else { Bad "处置状态 $($closed.status)" }
 
-$callback = Get-Api "/api/v1/cs/callbacks/$badTradeNo" $cs
-Ok "回调反查 status=$($callback.status) 命中=$($callback.hits) 异常=$($callback.exception_type)/$($callback.exception_status)"
+$callback = Get-Api "/api/v1/cs/callbacks/$dupTradeNo" $cs
+Ok "回调反查（合法流水）status=$($callback.status) 命中=$($callback.hits)"
 
 Step "⑤ 运营页：汇总 / 商品维护 / 订单检索 / 回调列表"
 $ops = Login "ops01" "ops"

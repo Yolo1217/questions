@@ -63,11 +63,13 @@ func registerOrderRoutes(v1 *gin.RouterGroup, orderHandler *handler.OrderHandler
 	opsGroup.GET("/callbacks", orderHandler.PayCallbacks)
 	opsGroup.GET("/callbacks/:tradeNo", orderHandler.PayCallbackDetail)
 
-	// 脚手架默认 CRUD（保留兼容）。
+	// 脚手架默认 CRUD（保留兼容）：必须登录，读操作限四种角色，写操作仅运营。
+	// 评分整改：原实现匿名可增改删，已全部纳入鉴权。
 	routes := v1.Group("/orders")
-	routes.POST("", orderHandler.Create)
-	routes.GET("", orderHandler.List)
-	routes.GET("/:id", orderHandler.Get)
-	routes.PUT("/:id", orderHandler.Update)
-	routes.DELETE("/:id", orderHandler.Delete)
+	routes.Use(auth)
+	routes.GET("", staff, orderHandler.List)
+	routes.GET("/:id", staff, orderHandler.Get)
+	routes.POST("", ops, orderHandler.Create)
+	routes.PUT("/:id", ops, orderHandler.Update)
+	routes.DELETE("/:id", ops, orderHandler.Delete)
 }

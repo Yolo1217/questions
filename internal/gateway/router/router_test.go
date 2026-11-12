@@ -149,6 +149,32 @@ func TestRouterLoginIssuesJWTAtGateway(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 }
 
+// 评分整改回归：脚手架 /api/v1/orders CRUD 不得匿名访问。
+func TestRouterRejectsAnonymousOrderMutations(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := router.New(&client.Clients{
+		User: fakeUserClient{},
+		Note: fakeNoteClient{},
+	}, zap.NewNop(), config.MiddlewareConfig{
+		JWT: middleware.JWTConfig{
+			Secret:        "test-secret",
+			Issuer:        "xiaolanshu",
+			ExpireSeconds: 7200,
+		},
+	})
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodPost, "/api/v1/orders"},
+		{http.MethodPut, "/api/v1/orders/o-1"},
+		{http.MethodDelete, "/api/v1/orders/o-1"},
+		{http.MethodGet, "/api/v1/orders"},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		rec := httptest.NewRecorder()
+		engine.ServeHTTP(rec, req)
+		require.Equal(t, http.StatusUnauthorized, rec.Code, "%s %s must reject anonymous access", tc.method, tc.path)
+	}
+}
+
 func requireRoute(t *testing.T, routes gin.RoutesInfo, method string, path string) {
 	t.Helper()
 	for _, route := range routes {
